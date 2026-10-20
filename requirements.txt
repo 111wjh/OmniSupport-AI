@@ -1,0 +1,25 @@
+
+# FastAPI Web 框架与 ASGI 服务器
+fastapi==0.143.3
+uvicorn[standard]==0.54.0
+
+# 数据库与迁移
+SQLAlchemy==2.1.5
+psycopg[binary]==3.3.6
+alembic==1.20.0
+
+# 数据校验与环境配置
+pydantic==2.14.1
+pydantic-settings==2.16.0
+python-dotenv==1.2.4
+email-validator==2.3.0
+
+# 大语言模型 API
+openai==3.35.1
+
+# 安全密码哈希
+pwdlib[argon2]==0.3.1
+
+# 接口调试与现有测试
+httpx==0.28.1
+pytest==9.1.1
