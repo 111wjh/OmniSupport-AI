@@ -1,3 +1,5 @@
+from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -26,3 +28,10 @@ AsyncSessionLocal = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
+
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """为每个请求提供数据库会话。"""
+
+    async with AsyncSessionLocal() as session:
+        yield session
