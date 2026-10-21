@@ -19,7 +19,8 @@ openai==3.35.1
 
 # 安全密码哈希
 pwdlib[argon2]==0.3.1
-
+# JWT 身份认证
+PyJWT==2.15.1
 # 接口调试与现有测试
 httpx==0.28.1
 pytest==9.1.1

@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str | None = None
     # PostgreSQL 数据库配置
     DATABASE_URL: str | None = None
+    # JWT 身份认证配置
+    JWT_SECRET_KEY: str = ""
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     model_config = SettingsConfigDict(
         env_file=".env", 
         env_file_encoding="utf-8",

@@ -31,3 +31,19 @@ class CustomerResponse(BaseModel):
     email: EmailStr
     display_name: str
     is_active: bool
+
+
+class CustomerLoginRequest(BaseModel):
+    """客户登录请求。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=128)
+
+
+class TokenResponse(BaseModel):
+    """登录成功后返回的访问令牌。"""
+
+    access_token: str
+    token_type: str = "bearer"
