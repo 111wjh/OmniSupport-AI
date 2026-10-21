@@ -20,6 +20,14 @@ class Order(Base):
         default=uuid4,
     )
 
+    # 订单所属客户
+    customer_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("customers.id"),
+        nullable=True,
+        index=True,
+    )
+
     # 用户可输入的业务订单编号
     order_number: Mapped[str] = mapped_column(
         String(50),

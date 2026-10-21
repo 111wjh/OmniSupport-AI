@@ -2,7 +2,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,6 +20,17 @@ class Conversation(Base):
         PG_UUID(as_uuid=True),
         primary_key=True,
         default=uuid4,
+    )
+
+        # 会话所属客户；NULL 表示尚未关联客户
+    customer_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey(
+            "customers.id",
+            name="fk_conversations_customer_id",
+        ),
+        nullable=True,
+        index=True,
     )
 
     # 会话标题

@@ -1,6 +1,10 @@
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from typing import Annotated
+from fastapi import Depends
 
+from app.core.auth import get_current_customer
+from app.models.customer import Customer
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.chat_service import (
     generate_reply_and_save,
@@ -20,7 +24,13 @@ router = APIRouter(
 @router.post("/chat", response_model=ChatResponse)
 
 
-async def chat(request: ChatRequest) -> ChatResponse:
+async def chat(
+    request: ChatRequest,
+    current_customer: Annotated[
+        Customer,
+        Depends(get_current_customer),
+    ],
+) -> ChatResponse:
     """处理用户聊天请求。"""
 
     # 判断是否属于首次聊天
@@ -29,7 +39,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
     # 创建新会话或验证已有会话
     try:
         conversation_id = await resolve_conversation_id(
-            request.conversation_id
+            request.conversation_id,
+            customer_id=current_customer.id,
         )
     except ValueError as exc:
         raise HTTPException(
@@ -42,7 +53,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
         reply = await generate_reply_and_save(
             message=request.message,
             conversation_id=conversation_id,
-        )
+            customer_id=current_customer.id,
+            )
 
     except Exception as exc:
         # 仅对本次新创建的空会话执行清理

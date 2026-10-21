@@ -1,6 +1,9 @@
 
 import json
+from uuid import UUID
 
+from app.db.session import AsyncSessionLocal
+from app.services.order_service import get_order_by_number
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 import logging
 
@@ -21,6 +24,7 @@ class OrderStatusArguments(BaseModel):
 async def execute_tool(
     tool_name: str,
     arguments: str,
+    customer_id: UUID | None = None,
 ) -> dict:
     """统一执行 Agent 工具。"""
 
@@ -48,12 +52,39 @@ async def execute_tool(
             "message": "订单查询参数不合法",
         }
 
-    # 3. 当前尚未实现客户身份认证，因此拒绝查询
+
+    # 3. 未提供经过验证的客户身份时，拒绝查询
+    if customer_id is None:
+        return {
+            "success": False,
+            "error": "authentication_required",
+            "message": "订单查询需要先登录。",
+        }
+
+    # 4. 根据订单编号和当前客户 ID 查询订单
+    async with AsyncSessionLocal() as session:
+        order = await get_order_by_number(
+            session=session,
+            order_number=args.order_number,
+            customer_id=customer_id,
+        )
+
+    # 5. 统一处理订单不存在或无权访问的情况
+    if order is None:
+        return {
+            "success": False,
+            "error": "order_not_found",
+            "message": "未找到该订单，或当前账号无权查看。",
+        }
+
+    # 6. 返回当前客户有权查看的订单信息
     return {
-        "success": False,
-        "error": "authentication_required",
-        "message": (
-            "订单查询需要先验证客户身份。"
-            "当前系统尚未接入身份认证，无法查询订单。"
-        ),
+        "success": True,
+        "data": {
+            "order_number": order.order_number,
+            "product_name": order.product_name,
+            "total_amount": str(order.total_amount),
+            "status": order.status,
+            "purchased_at": order.purchased_at.isoformat(),
+        },
     }

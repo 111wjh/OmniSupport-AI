@@ -16,6 +16,7 @@ def create_conversation_id() -> UUID:
 async def create_conversation(
     session: AsyncSession,
     title: str = "新会话",
+    customer_id: UUID | None = None,
 ) -> Conversation:
     """
     创建新的聊天会话。
@@ -25,8 +26,9 @@ async def create_conversation(
 
     # 1. 创建 Conversation ORM 对象
     conversation = Conversation(
-        id=create_conversation_id(),
-        title=title,
+    id=create_conversation_id(),
+    title=title,
+    customer_id=customer_id,
     )
 
     # 2. 添加到数据库 Session
@@ -40,14 +42,16 @@ async def create_conversation(
 
 
 
+
 async def resolve_conversation_id(
     conversation_id: UUID | None,
+    customer_id: UUID | None = None,
 ) -> UUID:
     """
     处理聊天会话 ID。
 
-    没有 ID：创建新会话。
-    有 ID：验证会话存在并复用。
+    没有 ID：创建新会话并关联客户。
+    有 ID：验证会话存在且属于当前客户。
     """
 
     # 继续已有聊天
@@ -59,7 +63,10 @@ async def resolve_conversation_id(
             )
 
             if conversation is None:
-                raise ValueError("会话不存在")
+                raise ValueError("会话不存在或无权访问")
+
+            if conversation.customer_id != customer_id:
+                raise ValueError("会话不存在或无权访问")
 
             return conversation.id
 
@@ -68,9 +75,11 @@ async def resolve_conversation_id(
         conversation = await create_conversation(
             session=session,
             title="新会话",
+            customer_id=customer_id,
         )
 
         return conversation.id
+
 
 
 async def delete_empty_conversation(

@@ -74,6 +74,7 @@ class ConversationLockExpiredError(Exception):
 async def generate_reply_and_save(
     message: str,
     conversation_id: UUID,
+    customer_id: UUID | None = None,
 ) -> str:
     """生成回复、安全保存消息，并自动续期会话处理权。"""
 
@@ -113,6 +114,7 @@ async def generate_reply_and_save(
         reply = await generate_llm_reply(
             message=message,
             history=history,
+            customer_id=customer_id,
         )
 
         # 5. 如果续期已经失败，不继续保存

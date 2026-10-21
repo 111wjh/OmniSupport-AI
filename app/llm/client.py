@@ -8,7 +8,7 @@ from typing import Any
 
 from app.tools.definitions import AGENT_TOOLS
 from app.tools.executor import execute_tool
-
+from uuid import UUID
 
 
 def build_llm_messages(
@@ -42,6 +42,7 @@ def build_llm_messages(
 async def generate_llm_reply(
     message: str,
     history: list[dict[str, str]] | None = None,
+    customer_id: UUID | None = None,
 ) -> str:
     """调用大模型，并处理工具调用及最终回复。"""
 
@@ -99,6 +100,7 @@ async def generate_llm_reply(
                 tool_result = await execute_tool(
                     tool_name=tool_call.function.name,
                     arguments=tool_call.function.arguments,
+                    customer_id=customer_id,
                 )
 
                 messages.append({
