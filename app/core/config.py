@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = ""
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    RERANK_API_URL: str = ""
+    # Qdrant 向量数据库配置
+    QDRANT_URL: str = "http://127.0.0.1:6333"
+    QDRANT_API_KEY: str | None = None
     model_config = SettingsConfigDict(
         env_file=".env", 
         env_file_encoding="utf-8",

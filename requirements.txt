@@ -8,6 +8,9 @@ SQLAlchemy==2.1.5
 psycopg[binary]==3.3.6
 alembic==1.20.0
 
+# 向量数据库客户端
+qdrant-client==1.16.2
+
 # 数据校验与环境配置
 pydantic==2.14.1
 pydantic-settings==2.16.0
