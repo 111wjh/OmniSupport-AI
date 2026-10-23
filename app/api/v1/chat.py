@@ -1,7 +1,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
-from fastapi import Depends
 
 from app.core.auth import get_current_customer
 from app.models.customer import Customer
@@ -22,8 +21,6 @@ router = APIRouter(
 
 
 @router.post("/chat", response_model=ChatResponse)
-
-
 async def chat(
     request: ChatRequest,
     current_customer: Annotated[
