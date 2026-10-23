@@ -4,14 +4,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from openai import OpenAIError
 
-from app.services.vision_service import analyze_image
+from app.services.multimodal_service import handle_multimodal_question
 
 from app.core.auth import get_current_customer
 from app.models.customer import Customer
 from io import BytesIO
 
 from PIL import Image, UnidentifiedImageError
-
+import logging
 router = APIRouter(
     prefix="/api/v1",
     tags=["Images"],
@@ -140,26 +140,36 @@ async def upload_image(
         validate_image_content(content)
 
         # 5. 返回验证结果
-        # 调用 Qwen 视觉模型
+        # 调用多模态业务编排服务
         try:
-            answer = await analyze_image(
+
+            result = await handle_multimodal_question(
                 image_bytes=content,
                 image_type=actual_type,
                 question=question,
+                customer_id=current_customer.id,
             )
+
         except OpenAIError:
+            logging.getLogger(__name__).exception(
+                "多模态 AI 模型调用失败"
+            )
             raise HTTPException(
                 status_code=502,
-                detail="视觉模型调用失败，请稍后重试",
+                detail="AI 模型调用失败，请稍后重试",
             ) from None
+
+
 
         return {
             "success": True,
             "filename": file.filename,
             "content_type": actual_type,
             "size": len(content),
-            "answer": answer,
+            "image_observation": result["image_observation"],
+            "answer": result["answer"],
         }
+
 
 
     finally:
