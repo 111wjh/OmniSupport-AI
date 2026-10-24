@@ -13,6 +13,8 @@ from app.services.chat_service import (
 from app.services.conversation_service import resolve_conversation_id
 from openai import APITimeoutError, APIConnectionError, APIStatusError
 from app.services.conversation_service import delete_empty_conversation
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/v1",
@@ -89,7 +91,10 @@ async def chat(
                 detail="AI 服务暂时不可用，请稍后重试",
             ) from exc
 
-        # 未知异常继续抛出，不隐藏真正的问题
+        # 未知异常：记录堆栈后继续抛出
+        logger.exception(
+            "聊天接口发生未处理异常"
+        )
         raise
 
     return ChatResponse(
