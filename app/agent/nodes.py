@@ -7,8 +7,10 @@ from app.agent.state import AgentState
 from app.core.config import get_settings
 from app.tools.definitions import AGENT_TOOLS
 import json
-
+import time
 from app.tools.executor import execute_tool
+from app.core.request_context import get_request_id
+
 logger = logging.getLogger(__name__)
 async def call_model(
     state: AgentState,
@@ -30,10 +32,12 @@ async def call_model(
     # 创建异步大模型客户端
 
     logger.info(
-        "LangGraph 模型调用开始：model=%s, call_number=%s",
-        settings.LLM_MODEL,
-        state["model_calls"] + 1,
-    )
+    "LangGraph 模型调用开始：request_id=%s, model=%s, call_number=%s",
+    get_request_id(),
+    settings.LLM_MODEL,
+    state["model_calls"] + 1,
+)
+    start_time = time.perf_counter()
 
     try:
         async with AsyncOpenAI(
@@ -54,18 +58,31 @@ async def call_model(
             )
 
     except Exception:
+        duration_ms = (time.perf_counter() - start_time) * 1000
+
+        
         logger.exception(
-            "LangGraph 模型调用失败：model=%s, call_number=%s",
+            "LangGraph 模型调用失败：request_id=%s, model=%s, call_number=%s, duration_ms=%.2f",
+            get_request_id(),
             settings.LLM_MODEL,
             state["model_calls"] + 1,
+            duration_ms,
         )
+
         raise
 
+
+    duration_ms = (time.perf_counter() - start_time) * 1000
+
+    
     logger.info(
-        "LangGraph 模型调用成功：model=%s, call_number=%s",
+        "LangGraph 模型调用成功：request_id=%s, model=%s, call_number=%s, duration_ms=%.2f",
+        get_request_id(),
         settings.LLM_MODEL,
         state["model_calls"] + 1,
+        duration_ms,
     )
+
 
 
     # 获取模型返回的助手消息
@@ -112,10 +129,11 @@ async def execute_tools(
         tool_name = function["name"]
 
         logger.info(
-            "LangGraph 工具执行开始：tool=%s",
-            tool_name,
+        "LangGraph 工具执行开始：request_id=%s, tool=%s",
+        get_request_id(),
+        tool_name,
         )
-
+        start_time = time.perf_counter()
         try:
             tool_result = await execute_tool(
                 tool_name=tool_name,
@@ -124,27 +142,33 @@ async def execute_tools(
             )
         except Exception:
             logger.exception(
-                "LangGraph 工具执行异常：tool=%s",
-                tool_name,
-            )
+            "LangGraph 工具执行异常：request_id=%s, tool=%s",
+            get_request_id(),
+            tool_name,
+        )
 
             tool_result = {
                 "success": False,
                 "error": "tool_execution_failed",
                 "message": "工具执行暂时失败，请稍后重试。",
             }
+        duration_ms = (time.perf_counter() - start_time) * 1000
 
-
+        
         if tool_result.get("success") is True:
             logger.info(
-                "LangGraph 工具执行成功：tool=%s",
+                "LangGraph 工具执行成功：request_id=%s, tool=%s, duration_ms=%.2f",
+                get_request_id(),
                 tool_name,
+                duration_ms,
             )
         else:
             logger.warning(
-                "LangGraph 工具执行失败：tool=%s, error=%s",
+                "LangGraph 工具执行失败：request_id=%s, tool=%s, error=%s, duration_ms=%.2f",
+                get_request_id(),
                 tool_name,
                 tool_result.get("error", "unknown_error"),
+                duration_ms,
             )
 
 

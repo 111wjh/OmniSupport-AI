@@ -17,7 +17,7 @@ if not settings.DATABASE_URL:
 # 创建异步数据库引擎,负责建立和管理 PostgreSQL 连接池。
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=settings.DEBUG,
+    echo=False,
     pool_pre_ping=True,
 )
 
