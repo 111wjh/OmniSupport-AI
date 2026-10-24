@@ -3,7 +3,7 @@ import logging
 from uuid import UUID
 
 from app.db.session import AsyncSessionLocal
-from app.llm.client import generate_llm_reply
+from app.agent.service import generate_agent_reply
 from app.llm.message_formatter import format_history_for_llm
 from app.services.conversation_service import (
     acquire_conversation,
@@ -112,7 +112,7 @@ async def generate_reply_and_save(
             history = format_history_for_llm(history_messages)
 
         # 4. 调用 Qwen
-        reply = await generate_llm_reply(
+        reply = await generate_agent_reply(
             message=message,
             history=history,
             customer_id=customer_id,
