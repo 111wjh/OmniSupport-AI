@@ -1,7 +1,6 @@
-
 from uuid import UUID
 
-from app.llm.client import generate_llm_reply
+from app.services.chat_service import generate_reply_and_save
 from app.services.vision_service import analyze_image
 
 
@@ -9,11 +8,12 @@ async def handle_multimodal_question(
     image_bytes: bytes,
     image_type: str,
     question: str,
+    conversation_id: UUID,
     customer_id: UUID,
 ) -> dict:
-    """结合图片理解与 Agent 工具执行回答客户问题。"""
+    """结合图片理解、会话管理和 Agent 工具执行回答客户问题。"""
 
-    # 第一步：视觉模型观察图片
+    # 第一步：调用视觉模型，生成图片观察结果
     image_observation = await analyze_image(
         image_bytes=image_bytes,
         image_type=image_type,
@@ -26,15 +26,16 @@ async def handle_multimodal_question(
         ),
     )
 
-    # 第二步：调用现有 Agent
-    # Agent 自主决定是否查询订单或检索知识库
-    answer = await generate_llm_reply(
+    # 第二步：复用现有聊天服务
+    # 自动读取历史消息、调用 Agent、保存聊天记录
+    answer = await generate_reply_and_save(
         message=question,
+        conversation_id=conversation_id,
         customer_id=customer_id,
         image_observation=image_observation,
     )
 
-    # 第三步：返回结果
+    # 第三步：返回图片观察结果和最终回答
     return {
         "image_observation": image_observation,
         "answer": answer,

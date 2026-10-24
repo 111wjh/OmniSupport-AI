@@ -9,7 +9,16 @@ from app.services.multimodal_service import handle_multimodal_question
 from app.core.auth import get_current_customer
 from app.models.customer import Customer
 from io import BytesIO
+from uuid import UUID
 
+from app.services.conversation_service import (
+    resolve_conversation_id,
+    delete_empty_conversation,
+)
+from app.services.chat_service import (
+    ConversationBusyError,
+    ConversationLockExpiredError,
+)
 from PIL import Image, UnidentifiedImageError
 import logging
 router = APIRouter(
@@ -94,6 +103,7 @@ async def upload_image(
         Customer,
         Depends(get_current_customer),
     ],
+    conversation_id: Annotated[UUID | None, Form()] = None,
 ):
     """接收并检查客户上传的图片。"""
 
@@ -138,26 +148,66 @@ async def upload_image(
 
         # 使用 Pillow 验证图片内容
         validate_image_content(content)
+        # 解析或创建当前客户的会话
+        is_new_conversation = conversation_id is None
 
+        try:
+            resolved_conversation_id = await resolve_conversation_id(
+                conversation_id,
+                customer_id=current_customer.id,
+            )
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=404,
+                detail="会话不存在",
+            ) from exc
         # 5. 返回验证结果
         # 调用多模态业务编排服务
-        try:
 
+        try:
             result = await handle_multimodal_question(
                 image_bytes=content,
                 image_type=actual_type,
                 question=question,
+                conversation_id=resolved_conversation_id,
                 customer_id=current_customer.id,
             )
 
-        except OpenAIError:
-            logging.getLogger(__name__).exception(
-                "多模态 AI 模型调用失败"
-            )
-            raise HTTPException(
-                status_code=502,
-                detail="AI 模型调用失败，请稍后重试",
-            ) from None
+        except Exception as exc:
+            # 首次请求失败时，只清理本次创建的空会话
+            if is_new_conversation:
+                try:
+                    await delete_empty_conversation(
+                        resolved_conversation_id
+                    )
+                except Exception:
+                    logging.getLogger(__name__).exception(
+                        "清理空会话失败"
+                    )
+
+            if isinstance(exc, ConversationBusyError):
+                raise HTTPException(
+                    status_code=409,
+                    detail="会话正在处理中，请稍后重试",
+                ) from exc
+
+            if isinstance(exc, ConversationLockExpiredError):
+                raise HTTPException(
+                    status_code=409,
+                    detail="会话处理权已失效，请重新发送消息",
+                ) from exc
+
+            if isinstance(exc, OpenAIError):
+                logging.getLogger(__name__).exception(
+                    "多模态 AI 模型调用失败"
+                )
+                raise HTTPException(
+                    status_code=502,
+                    detail="AI 模型调用失败，请稍后重试",
+                ) from None
+
+            raise
+
 
 
 
@@ -166,6 +216,7 @@ async def upload_image(
             "filename": file.filename,
             "content_type": actual_type,
             "size": len(content),
+            "conversation_id": str(resolved_conversation_id),
             "image_observation": result["image_observation"],
             "answer": result["answer"],
         }
