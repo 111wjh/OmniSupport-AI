@@ -1,27 +1,34 @@
 
+
 ORDER_STATUS_TOOL = {
     "type": "function",
     "function": {
         "name": "get_order_status",
         "description": (
             "查询当前已认证客户自己的订单状态。"
-            "当用户明确要求查询订单时使用。"
-            "必须先由后端验证客户身份及订单归属。"
-            "不能凭订单编号直接向未认证用户泄露订单信息。"
+            "当用户要求查询订单、最近一笔订单或订单详情时使用。"
+            "如果用户提供了订单编号，将 order_number 设置为该编号。"
+            "如果用户没有提供订单编号，查询当前客户最近一笔订单，"
+            "此时可以不传 order_number。"
+            "必须由后端验证客户身份及订单归属。"
+            "不能向未认证用户泄露订单信息。"
         ),
         "parameters": {
             "type": "object",
             "properties": {
                 "order_number": {
                     "type": "string",
-                    "description": "订单编号，例如 OMNI20260001",
+                    "description": (
+                        "可选的订单编号。用户提供编号时查询指定订单；"
+                        "未提供时查询当前客户最近一笔订单。"
+                    ),
                 }
             },
-            "required": ["order_number"],
             "additionalProperties": False,
         },
     },
 }
+
 
 
 KNOWLEDGE_SEARCH_TOOL = {

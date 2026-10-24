@@ -3,7 +3,10 @@ import json
 from uuid import UUID
 
 from app.db.session import AsyncSessionLocal
-from app.services.order_service import get_order_by_number
+from app.services.order_service import (
+    get_order_by_number,
+    get_latest_order_for_customer,
+)
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 import logging
 from app.services.rag_service import retrieve_relevant_knowledge
@@ -15,12 +18,12 @@ class OrderStatusArguments(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    order_number: str = Field(
+    order_number: str | None = Field(
+        default=None,
         min_length=1,
         max_length=50,
         pattern=r"^[A-Za-z0-9-]+$",
     )
-
 
 class KnowledgeSearchArguments(BaseModel):
     """知识库检索工具的参数。"""
@@ -107,21 +110,36 @@ async def execute_tool(
             "message": "订单查询需要先登录。",
         }
 
-    # 4. 根据订单编号和当前客户 ID 查询订单
-    async with AsyncSessionLocal() as session:
-        order = await get_order_by_number(
-            session=session,
-            order_number=args.order_number,
-            customer_id=customer_id,
-        )
 
-    # 5. 统一处理订单不存在或无权访问的情况
+    # 4. 根据参数查询指定订单或最近一笔订单
+    async with AsyncSessionLocal() as session:
+        if args.order_number is not None:
+            order = await get_order_by_number(
+                session=session,
+                order_number=args.order_number,
+                customer_id=customer_id,
+            )
+        else:
+            order = await get_latest_order_for_customer(
+                session=session,
+                customer_id=customer_id,
+            )
+
+    # 5. 处理订单不存在的情况
     if order is None:
+        if args.order_number is None:
+            return {
+                "success": False,
+                "error": "no_orders_found",
+                "message": "当前账号暂时没有可查询的订单。",
+            }
+
         return {
             "success": False,
             "error": "order_not_found",
             "message": "未找到该订单，或当前账号无权查看。",
         }
+
 
     # 6. 返回当前客户有权查看的订单信息
     return {

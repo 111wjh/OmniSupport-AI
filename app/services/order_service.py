@@ -25,3 +25,24 @@ async def get_order_by_number(
     result = await session.execute(stmt)
 
     return result.scalar_one_or_none()
+
+
+async def get_latest_order_for_customer(
+    session: AsyncSession,
+    customer_id: UUID,
+) -> Order | None:
+    """查询当前客户最近的一笔订单。"""
+
+    stmt = (
+        select(Order)
+        .where(Order.customer_id == customer_id)
+        .order_by(
+            Order.purchased_at.desc(),
+            Order.created_at.desc(),
+        )
+        .limit(1)
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
