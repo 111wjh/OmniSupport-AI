@@ -10,6 +10,7 @@ import json
 import time
 from app.tools.executor import execute_tool
 from app.core.request_context import get_request_id
+from app.core.langfuse_client import get_langfuse_client
 
 logger = logging.getLogger(__name__)
 async def call_model(
@@ -39,23 +40,57 @@ async def call_model(
 )
     start_time = time.perf_counter()
 
+    
     try:
-        async with AsyncOpenAI(
-            api_key=settings.LLM_API_KEY,
-            base_url=settings.LLM_BASE_URL,
-            timeout=60.0,
-            max_retries=1,
-        ) as client:
+        # 为每次 Qwen 调用创建独立的 Generation
+        langfuse = get_langfuse_client()
 
-            response = await client.chat.completions.create(
-                model=settings.LLM_MODEL,
-                messages=state["messages"],
-                tools=AGENT_TOOLS,
-                tool_choice="auto",
-                extra_body={
-                    "enable_thinking": False,
+        with langfuse.start_as_current_observation(
+            as_type="generation",
+            name="Qwen 模型调用",
+            model=settings.LLM_MODEL,
+            metadata={
+                "request_id": get_request_id() or "local",
+                "call_number": state["model_calls"] + 1,
+            },
+        ) as generation:
+
+            # 原有模型调用逻辑保持不变
+            async with AsyncOpenAI(
+                api_key=settings.LLM_API_KEY,
+                base_url=settings.LLM_BASE_URL,
+                timeout=60.0,
+                max_retries=1,
+            ) as client:
+
+                response = await client.chat.completions.create(
+                    model=settings.LLM_MODEL,
+                    messages=state["messages"],
+                    tools=AGENT_TOOLS,
+                    tool_choice="auto",
+                    extra_body={
+                        "enable_thinking": False,
+                    },
+                )
+
+            # 记录非敏感的执行结果
+            generation.update(
+                output={
+                    "status": "success",
+                    "has_tool_calls": bool(
+                        response.choices[0].message.tool_calls
+                    ),
                 },
             )
+
+            # 如果模型返回 Token 用量，则一并记录
+            if response.usage is not None:
+                generation.update(
+                    usage_details={
+                        "input": response.usage.prompt_tokens,
+                        "output": response.usage.completion_tokens,
+                    }
+                )
 
     except Exception:
         duration_ms = (time.perf_counter() - start_time) * 1000
@@ -133,25 +168,49 @@ async def execute_tools(
         get_request_id(),
         tool_name,
         )
+        
         start_time = time.perf_counter()
-        try:
-            tool_result = await execute_tool(
-                tool_name=tool_name,
-                arguments=function["arguments"],
-                customer_id=state["customer_id"],
-            )
-        except Exception:
-            logger.exception(
-            "LangGraph 工具执行异常：request_id=%s, tool=%s",
-            get_request_id(),
-            tool_name,
-        )
 
-            tool_result = {
-                "success": False,
-                "error": "tool_execution_failed",
-                "message": "工具执行暂时失败，请稍后重试。",
-            }
+        # 为当前工具创建独立的 Langfuse Tool 记录
+        langfuse = get_langfuse_client()
+
+        with langfuse.start_as_current_observation(
+            as_type="tool",
+            name=tool_name,
+            metadata={
+                "request_id": get_request_id() or "local",
+            },
+        ) as tool_span:
+            try:
+                tool_result = await execute_tool(
+                    tool_name=tool_name,
+                    arguments=function["arguments"],
+                    customer_id=state["customer_id"],
+                )
+            except Exception:
+                logger.exception(
+                    "LangGraph 工具执行异常：request_id=%s, tool=%s",
+                    get_request_id(),
+                    tool_name,
+                )
+
+                tool_result = {
+                    "success": False,
+                    "error": "tool_execution_failed",
+                    "message": "工具执行暂时失败，请稍后重试。",
+                }
+
+            # 只记录执行状态，不上传工具参数或业务结果
+            success = tool_result.get("success") is True
+
+            tool_span.update(
+                output={
+                    "success": success,
+                    "error": tool_result.get("error") if not success else None,
+                },
+                level="DEFAULT" if success else "ERROR",
+            )
+
         duration_ms = (time.perf_counter() - start_time) * 1000
 
         

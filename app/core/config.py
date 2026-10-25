@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     RERANK_API_URL: str = ""
+    # Langfuse 可观测性配置
+    LANGFUSE_PUBLIC_KEY: str | None = None
+    LANGFUSE_SECRET_KEY: str | None = None
+    LANGFUSE_BASE_URL: str = "https://jp.cloud.langfuse.com"
     # Qdrant 向量数据库配置
     QDRANT_URL: str = "http://127.0.0.1:6333"
     QDRANT_API_KEY: str | None = None
