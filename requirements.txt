@@ -33,3 +33,4 @@ Pillow==13.0.0
 
 langgraph==1.2.17
 langfuse==5.0.4
+mcp[cli]==2.3.0

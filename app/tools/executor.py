@@ -10,6 +10,7 @@ from app.services.order_service import (
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 import logging
 from app.services.rag_service import retrieve_relevant_knowledge
+from app.mcp_client.client import call_mcp_tool
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -34,6 +35,22 @@ class KnowledgeSearchArguments(BaseModel):
         min_length=1,
         max_length=500,
     )
+
+
+class ProductInfoArguments(BaseModel):
+    """MCP 商品查询工具的参数。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    product_name: str = Field(
+        min_length=1,
+        max_length=100,
+    )
+
+class ListProductsArguments(BaseModel):
+    """MCP 商品列表查询工具的参数。"""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 async def execute_tool(
@@ -79,6 +96,53 @@ async def execute_tool(
             "success": True,
             "data": results,
         }
+
+
+    # MCP 工具统一分发
+    mcp_argument_models = {
+        "get_product_info": ProductInfoArguments,
+        "list_products": ListProductsArguments,
+    }
+
+    # 根据工具名称找到对应的参数验证模型
+    argument_model = mcp_argument_models.get(tool_name)
+
+    if argument_model is not None:
+        # 1. 验证大模型传入的 JSON 参数
+        try:
+            args = argument_model.model_validate_json(
+                arguments
+            )
+        except ValidationError:
+            return {
+                "success": False,
+                "error": "invalid_arguments",
+                "message": "MCP 工具参数不合法",
+            }
+
+        # 2. 使用通用 MCP Client 执行工具
+        try:
+            result = await call_mcp_tool(
+                tool_name=tool_name,
+                arguments=args.model_dump(),
+            )
+
+            return result
+
+        except Exception:
+            logger.exception(
+                "MCP tool execution failed: %s",
+                tool_name,
+            )
+
+            return {
+                "success": False,
+                "error": "mcp_tool_failed",
+                "message": "MCP 工具暂时不可用，请稍后重试。",
+            }
+
+
+
 
     # 2. 其他未注册的工具一律拒绝
     if tool_name != "get_order_status":

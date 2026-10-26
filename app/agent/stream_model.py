@@ -5,13 +5,16 @@ from openai import AsyncOpenAI
 
 from app.agent.stream_parser import collect_streamed_response
 from app.core.config import get_settings
-from app.tools.definitions import AGENT_TOOLS
+
+
 
 
 async def request_streamed_model(
     messages: list[dict[str, Any]],
     on_text_delta: Callable[[str], None] | None = None,
+    tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+
     """流式调用 Qwen，返回完整的助手消息。"""
 
     settings = get_settings()
@@ -22,6 +25,8 @@ async def request_streamed_model(
         settings.LLM_BASE_URL,
     ]):
         raise ValueError("大模型配置不完整")
+    if tools is None:
+        raise ValueError("流式模型调用必须提供工具列表")
 
     async with AsyncOpenAI(
         api_key=settings.LLM_API_KEY,
@@ -33,7 +38,7 @@ async def request_streamed_model(
         stream = await client.chat.completions.create(
             model=settings.LLM_MODEL,
             messages=messages,
-            tools=AGENT_TOOLS,
+            tools=tools,
             tool_choice="auto",
             stream=True,
             extra_body={

@@ -5,7 +5,6 @@ from openai import AsyncOpenAI
 import logging
 from app.agent.state import AgentState
 from app.core.config import get_settings
-from app.tools.definitions import AGENT_TOOLS
 import json
 import time
 from app.tools.executor import execute_tool
@@ -14,6 +13,7 @@ from app.core.langfuse_client import get_langfuse_client
 from app.agent.stream_model import request_streamed_model
 #自定义事件写入器。
 from langgraph.config import get_stream_writer
+from app.mcp_client.catalog import build_agent_tools
 
 logger = logging.getLogger(__name__)
 async def call_model(
@@ -33,6 +33,8 @@ async def call_model(
     ]):
         raise ValueError("大模型配置不完整，请检查 .env 文件")
 
+    # 动态获取本地工具和经过白名单审核的 MCP 工具
+    agent_tools = await build_agent_tools()
     # 创建异步大模型客户端
 
     logger.info(
@@ -69,6 +71,7 @@ async def call_model(
                 assistant_message = await request_streamed_model(
                     messages=state["messages"],
                     on_text_delta=collect_text_delta,
+                    tools=agent_tools,
                 )
 
                 # 只有本轮没有调用工具，才允许发送文本
@@ -92,7 +95,7 @@ async def call_model(
                     response = await client.chat.completions.create(
                         model=settings.LLM_MODEL,
                         messages=state["messages"],
-                        tools=AGENT_TOOLS,
+                        tools=agent_tools,
                         tool_choice="auto",
                         extra_body={
                             "enable_thinking": False,
