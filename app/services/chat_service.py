@@ -15,6 +15,7 @@ from app.services.message_service import (
     save_chat_turn_with_token,
 )
 import asyncio
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,7 @@ async def generate_reply_and_save(
     conversation_id: UUID,
     customer_id: UUID | None = None,
     image_observation: str | None = None,
+    on_text_delta: Callable[[str], None] | None = None,
 ) -> str:
     """生成回复、安全保存消息，并自动续期会话处理权。"""
 
@@ -117,6 +119,7 @@ async def generate_reply_and_save(
             history=history,
             customer_id=customer_id,
             image_observation=image_observation,
+            on_text_delta=on_text_delta,
         )
 
         # 5. 如果续期已经失败，不继续保存
@@ -177,15 +180,59 @@ async def generate_reply_and_save(
             )
 
         # 8. 只释放属于自己的处理权
-        try:
-            await release_conversation(
+        release_task = asyncio.create_task(
+            release_conversation(
                 conversation_id,
                 token,
             )
-        except Exception:
-            logger.exception(
-                "释放会话处理权失败：conversation_id=%s",
+        )
+
+        cancellation_received = False
+
+        # 即使当前聊天任务被取消，也继续等待锁释放
+        while True:
+            try:
+                await asyncio.shield(release_task)
+                break
+
+            except asyncio.CancelledError:
+                 # 只在第一次收到取消时记录日志
+                if not cancellation_received:
+                    logger.warning(
+                        "聊天任务已取消，等待会话锁释放：conversation_id=%s",
+                        conversation_id,
+                    )
+
+                cancellation_received = True
+
+                # 清除当前任务尚未处理的取消请求，
+                # 让后续 await 有机会继续等待释放任务
+                current_task = asyncio.current_task()
+
+                if current_task is not None:
+                    while current_task.cancelling():
+                        current_task.uncancel()
+
+            except Exception:
+                # 数据库释放任务失败，跳出循环并记录错误
+                break
+
+        # 检查独立释放任务的最终结果
+        try:
+            release_task.result()
+
+        except asyncio.CancelledError:
+            logger.error(
+                "[LOCK DEBUG] 独立释放任务被取消：conversation_id=%s",
                 conversation_id,
             )
 
+        except Exception:
+            logger.exception(
+                "[LOCK DEBUG] 释放会话锁失败：conversation_id=%s",
+                conversation_id,
+            )
 
+        # 数据库清理完成后，保留原有的取消语义
+        if cancellation_received:
+            raise asyncio.CancelledError()

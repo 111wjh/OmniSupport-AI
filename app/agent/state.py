@@ -1,6 +1,6 @@
 
 from operator import add
-from typing import Annotated, Any, TypedDict
+from typing import Annotated, Any, TypedDict, NotRequired
 from uuid import UUID
 
 
@@ -16,3 +16,5 @@ class AgentState(TypedDict):
     customer_id: UUID | None
     # 当前工作流已经调用大模型的次数
     model_calls: int
+    # 是否启用流式输出；未提供时默认为 False
+    stream_enabled: NotRequired[bool]

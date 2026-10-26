@@ -1,6 +1,6 @@
 
 from typing import Any
-
+import asyncio
 from openai import AsyncOpenAI
 import logging
 from app.agent.state import AgentState
@@ -11,6 +11,9 @@ import time
 from app.tools.executor import execute_tool
 from app.core.request_context import get_request_id
 from app.core.langfuse_client import get_langfuse_client
+from app.agent.stream_model import request_streamed_model
+#自定义事件写入器。
+from langgraph.config import get_stream_writer
 
 logger = logging.getLogger(__name__)
 async def call_model(
@@ -40,9 +43,7 @@ async def call_model(
 )
     start_time = time.perf_counter()
 
-    
     try:
-        # 为每次 Qwen 调用创建独立的 Generation
         langfuse = get_langfuse_client()
 
         with langfuse.start_as_current_observation(
@@ -52,46 +53,90 @@ async def call_model(
             metadata={
                 "request_id": get_request_id() or "local",
                 "call_number": state["model_calls"] + 1,
+                "stream_enabled": state.get("stream_enabled", False),
             },
         ) as generation:
 
-            # 原有模型调用逻辑保持不变
-            async with AsyncOpenAI(
-                api_key=settings.LLM_API_KEY,
-                base_url=settings.LLM_BASE_URL,
-                timeout=60.0,
-                max_retries=1,
-            ) as client:
+            if state.get("stream_enabled", False):
+                writer = get_stream_writer()
 
-                response = await client.chat.completions.create(
-                    model=settings.LLM_MODEL,
+                # 暂存本轮模型生成的文本片段
+                pending_text_parts = []
+
+                def collect_text_delta(text: str) -> None:
+                    pending_text_parts.append(text)
+
+                assistant_message = await request_streamed_model(
                     messages=state["messages"],
-                    tools=AGENT_TOOLS,
-                    tool_choice="auto",
-                    extra_body={
-                        "enable_thinking": False,
-                    },
+                    on_text_delta=collect_text_delta,
                 )
 
-            # 记录非敏感的执行结果
+                # 只有本轮没有调用工具，才允许发送文本
+                if not assistant_message.get("tool_calls"):
+                    for text in pending_text_parts:
+                        writer({
+                            "type": "token",
+                            "content": text,
+                        })
+
+
+            else:
+                # 非流式模式：保留原来的 Qwen 调用
+                async with AsyncOpenAI(
+                    api_key=settings.LLM_API_KEY,
+                    base_url=settings.LLM_BASE_URL,
+                    timeout=60.0,
+                    max_retries=1,
+                ) as client:
+
+                    response = await client.chat.completions.create(
+                        model=settings.LLM_MODEL,
+                        messages=state["messages"],
+                        tools=AGENT_TOOLS,
+                        tool_choice="auto",
+                        extra_body={
+                            "enable_thinking": False,
+                        },
+                    )
+
+                assistant_message = (
+                    response.choices[0].message.model_dump(
+                        exclude_none=True
+                    )
+                )
+
+                # 当前仅在非流式模式记录 Token 用量
+                if response.usage is not None:
+                    generation.update(
+                        usage_details={
+                            "input": response.usage.prompt_tokens,
+                            "output": response.usage.completion_tokens,
+                        }
+                    )
+
+            # 两种模式统一记录执行状态
             generation.update(
                 output={
                     "status": "success",
                     "has_tool_calls": bool(
-                        response.choices[0].message.tool_calls
+                        assistant_message.get("tool_calls")
                     ),
                 },
             )
 
-            # 如果模型返回 Token 用量，则一并记录
-            if response.usage is not None:
-                generation.update(
-                    usage_details={
-                        "input": response.usage.prompt_tokens,
-                        "output": response.usage.completion_tokens,
-                    }
-                )
+    except asyncio.CancelledError:
+        duration_ms = (time.perf_counter() - start_time) * 1000
 
+        logger.warning(
+            "LangGraph 模型调用被取消：request_id=%s, "
+            "model=%s, call_number=%s, duration_ms=%.2f",
+            get_request_id(),
+            settings.LLM_MODEL,
+            state["model_calls"] + 1,
+            duration_ms,
+        )
+
+        raise
     except Exception:
         duration_ms = (time.perf_counter() - start_time) * 1000
 
@@ -119,21 +164,14 @@ async def call_model(
     )
 
 
-
-    # 获取模型返回的助手消息
-    assistant_message = response.choices[0].message
-
     # 如果既没有工具调用，也没有有效文本，则报错
-    if not assistant_message.tool_calls and not assistant_message.content:
+    if not assistant_message.get("tool_calls") and not assistant_message.get("content"):
         raise ValueError("大模型没有返回有效文本")
 
     # 将助手消息追加到 LangGraph 的共享状态
     return {
-        "messages": [
-            assistant_message.model_dump(exclude_none=True)
-        ],
-        "model_calls": state["model_calls"] + 1,
-
+    "messages": [assistant_message],
+    "model_calls": state["model_calls"] + 1,
     }
 
 async def execute_tools(
