@@ -87,4 +87,7 @@ async def login_customer(
         raise InvalidCredentialsError("邮箱或密码错误")
 
     # 使用客户的 UUID 作为 JWT 的 subject
-    return create_access_token(subject=str(customer.id))
+    return create_access_token(
+    subject=str(customer.id),
+    actor_type="customer",
+    )

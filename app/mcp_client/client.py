@@ -26,7 +26,6 @@ async def call_mcp_tool(
         args=["-m", "app.mcp_server.server"],
     )
 
-    
     # 3. 限制 MCP 连接和工具调用的总等待时间
     try:
         async with asyncio.timeout(MCP_TOOL_TIMEOUT_SECONDS):

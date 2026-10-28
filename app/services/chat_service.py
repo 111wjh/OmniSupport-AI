@@ -1,6 +1,6 @@
 
 import logging
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.db.session import AsyncSessionLocal
 from app.agent.service import generate_agent_reply
@@ -113,9 +113,11 @@ async def generate_reply_and_save(
 
             history = format_history_for_llm(history_messages)
 
+        workflow_thread_id = str(uuid4())
         # 4. 调用 Qwen
         reply = await generate_agent_reply(
             message=message,
+            workflow_thread_id=workflow_thread_id,
             history=history,
             customer_id=customer_id,
             image_observation=image_observation,

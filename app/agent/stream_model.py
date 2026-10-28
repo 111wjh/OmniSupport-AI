@@ -13,6 +13,7 @@ async def request_streamed_model(
     messages: list[dict[str, Any]],
     on_text_delta: Callable[[str], None] | None = None,
     tools: list[dict[str, Any]] | None = None,
+    tool_choice: Any = "auto",
 ) -> dict[str, Any]:
 
     """流式调用 Qwen，返回完整的助手消息。"""
@@ -39,7 +40,7 @@ async def request_streamed_model(
             model=settings.LLM_MODEL,
             messages=messages,
             tools=tools,
-            tool_choice="auto",
+            tool_choice=tool_choice,
             stream=True,
             extra_body={
                 "enable_thinking": False,

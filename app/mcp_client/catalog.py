@@ -10,6 +10,9 @@ from app.mcp_client.schema import convert_mcp_tool_to_qwen
 from app.tools.definitions import (
     ORDER_STATUS_TOOL,
     KNOWLEDGE_SEARCH_TOOL,
+    LIST_MY_REFUNDS_TOOL,
+    SUBMIT_REFUND_REQUEST_TOOL,
+    GET_REFUND_EXECUTION_TOOL,
 )
 
 
@@ -117,9 +120,12 @@ async def build_agent_tools() -> list[dict]:
 
     # 1. 保留现有本地工具
     local_tools = [
-        ORDER_STATUS_TOOL,
-        KNOWLEDGE_SEARCH_TOOL,
-    ]
+    ORDER_STATUS_TOOL,
+    KNOWLEDGE_SEARCH_TOOL,
+    LIST_MY_REFUNDS_TOOL,
+    SUBMIT_REFUND_REQUEST_TOOL,
+    GET_REFUND_EXECUTION_TOOL,
+]
 
     # 2. 获取缓存的 MCP 工具
     mcp_tools = await get_cached_mcp_tools()

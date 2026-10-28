@@ -6,6 +6,7 @@ from typing import Any
 import jwt
 
 from app.core.config import get_settings
+from typing import Any, Literal
 
 # 创建推荐的安全密码哈希算法
 password_hash = PasswordHash.recommended()
@@ -27,8 +28,12 @@ def verify_password(
     )
 
 
-def create_access_token(subject: str) -> str:
-    """为已通过身份验证的客户生成 JWT 访问令牌。"""
+
+def create_access_token(
+    subject: str,
+    actor_type: Literal["customer", "staff"],
+) -> str:
+    """签发带有明确身份类型的 JWT 访问令牌。"""
 
     settings = get_settings()
 
@@ -38,6 +43,9 @@ def create_access_token(subject: str) -> str:
     if settings.JWT_ALGORITHM != "HS256":
         raise ValueError("当前项目仅支持 HS256 算法")
 
+    if actor_type not in {"customer", "staff"}:
+        raise ValueError("不支持的令牌身份类型")
+
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -45,6 +53,7 @@ def create_access_token(subject: str) -> str:
 
     payload = {
         "sub": subject,
+        "actor_type": actor_type,
         "iat": now,
         "exp": expires_at,
     }
