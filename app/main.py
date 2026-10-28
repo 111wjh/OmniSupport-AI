@@ -7,6 +7,7 @@ from app.api.v1.customers import router as customers_router
 from app.api.v1.images import router as images_router
 from app.api.v1.staff import router as staff_router
 from app.api.v1.refunds import router as refunds_router
+from app.api.v1.conversations import router as conversations_router
 from app.core.config import get_settings
 import logging
 import time
@@ -191,7 +192,7 @@ app.include_router(customers_router)
 app.include_router(images_router)
 app.include_router(staff_router)
 app.include_router(refunds_router)
-
+app.include_router(conversations_router)
 # 保留原始 FastAPI 实例
 fastapi_app = app
 

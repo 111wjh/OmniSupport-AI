@@ -204,3 +204,43 @@ async def release_conversation(
 
         return released_id is not None
 
+async def list_customer_conversations(
+    session: AsyncSession,
+    customer_id: UUID,
+    limit: int = 20,
+    offset: int = 0,
+) -> tuple[list[Conversation], int]:
+    """分页查询指定客户自己的会话。"""
+
+    # 1. 统一限定客户归属
+    customer_filter = (
+        Conversation.customer_id == customer_id
+    )
+
+    # 2. 统计该客户的会话总数
+    count_stmt = (
+        select(func.count())
+        .select_from(Conversation)
+        .where(customer_filter)
+    )
+
+    count_result = await session.execute(count_stmt)
+    total = count_result.scalar_one()
+
+    # 3. 查询当前页，最近更新的会话排在前面
+    stmt = (
+        select(Conversation)
+        .where(customer_filter)
+        .order_by(
+            Conversation.updated_at.desc(),
+            Conversation.id.desc(),
+        )
+        .limit(limit)
+        .offset(offset)
+    )
+
+    result = await session.execute(stmt)
+    items = list(result.scalars().all())
+
+    # 4. 返回当前页和总数
+    return items, total

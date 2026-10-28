@@ -120,3 +120,48 @@ async def save_chat_turn_with_token(
         role="assistant",
         content=assistant_content,
     )
+
+async def list_customer_conversation_messages(
+    session: AsyncSession,
+    conversation_id: UUID,
+    customer_id: UUID,
+    limit: int = 20,
+    offset: int = 0,
+) -> tuple[list[Message], int]:
+    """分页查询指定客户在指定会话中的消息。"""
+
+    # 消息通过会话表确定客户归属
+    join_condition = (
+        Conversation.id == Message.conversation_id
+    )
+
+    filters = [
+        Message.conversation_id == conversation_id,
+        Conversation.customer_id == customer_id,
+    ]
+
+    # 1. 统计符合条件的消息总数
+    count_stmt = (
+        select(func.count())
+        .select_from(Message)
+        .join(Conversation, join_condition)
+        .where(*filters)
+    )
+
+    count_result = await session.execute(count_stmt)
+    total = count_result.scalar_one()
+
+    # 2. 按消息顺序读取当前页
+    stmt = (
+        select(Message)
+        .join(Conversation, join_condition)
+        .where(*filters)
+        .order_by(Message.message_seq.asc())
+        .limit(limit)
+        .offset(offset)
+    )
+
+    result = await session.execute(stmt)
+    items = list(result.scalars().all())
+
+    return items, total
