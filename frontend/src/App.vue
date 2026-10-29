@@ -1,107 +1,37 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted } from 'vue'
+import { ArrowLeft, RefreshCw } from 'lucide-vue-next'
+import { useAuth } from './composables/useAuth'
+import BrandMark from './components/BrandMark.vue'
 import LoginForm from './components/LoginForm.vue'
-import { getCurrentCustomer } from './api/customer'
-import type { CustomerProfile } from './api/customer'
-import ConversationList from './components/ConversationList.vue'
-import MessageHistory from './components/MessageHistory.vue'
-const accessToken = ref<string>('')
-const customer = ref<CustomerProfile | null>(null)
-const isLoading = ref<boolean>(false)
-const errorMessage = ref<string>('')
-const selectedConversationId = ref<string>('')
-// 查询资料；首次登录和点击重试共用这个函数
-async function loadCustomer(): Promise<void> {
-  const token = accessToken.value
+import SupportWorkspace from './components/SupportWorkspace.vue'
 
-  if (!token || isLoading.value) {
-    return
-  }
-
-  isLoading.value = true
-  errorMessage.value = ''
-
-  try {
-    const result = await getCurrentCustomer(token)
-
-    // 退出或切换账号后，不再使用旧请求的结果
-    if (accessToken.value === token) {
-      customer.value = result
-    }
-  } catch (error: unknown) {
-    if (accessToken.value === token) {
-      errorMessage.value =
-        error instanceof Error ? error.message : '获取客户信息失败'
-    }
-  } finally {
-    if (accessToken.value === token) {
-      isLoading.value = false
-    }
-  }
-}
-function handleConversationSelected(conversationId: string): void {
-  selectedConversationId.value = conversationId
-}
-async function handleLoggedIn(token: string): Promise<void> {
-  accessToken.value = token
-  customer.value = null
-  selectedConversationId.value = ''
-  await loadCustomer()
-}
-
-function handleLogout(): void {
-  accessToken.value = ''
-  customer.value = null
-  errorMessage.value = ''
-  isLoading.value = false
-  selectedConversationId.value = ''
-}
+const { token, customer, loading, error, restore, acceptLogin, logout } = useAuth()
+onMounted(() => {
+  void restore()
+})
 </script>
 
 <template>
-  <LoginForm
-    v-if="!accessToken"
-    @logged-in="handleLoggedIn"
+  <SupportWorkspace
+    v-if="token && customer"
+    :key="customer.id"
+    :token="token"
+    :customer="customer"
+    @logout="logout"
   />
-
-  <main v-else class="login-page">
-    <section class="login-card">
-      <h1>OmniSupport AI</h1>
-
-      <p v-if="isLoading" role="status">
-        正在读取客户信息…
-      </p>
-
-      <div v-else-if="errorMessage">
-        <p role="alert">{{ errorMessage }}</p>
-        <button type="button" @click="loadCustomer">
-          重试
-        </button>
+  <main v-else-if="token" class="session-gate">
+    <BrandMark />
+    <section>
+      <span v-if="loading" class="spinner"></span>
+      <h1>{{ loading ? '正在连接你的工作空间' : '暂时无法读取账号信息' }}</h1>
+      <p>{{ error || '正在验证登录状态，请稍候…' }}</p>
+      <div v-if="!loading" class="gate-actions">
+        <button class="primary-button" @click="restore"><RefreshCw :size="16" />重新连接</button
+        ><button class="secondary-button" @click="logout"><ArrowLeft :size="16" />返回登录</button>
       </div>
-
-      <div v-else-if="customer">
-        <p>你好，{{ customer.display_name }}！</p>
-        <p>当前账号：{{ customer.email }}</p>
-
-        <ConversationList
-          :key="accessToken"
-          :token="accessToken"
-          @select-conversation="handleConversationSelected"
-        />
-
-        <MessageHistory
-          v-if="selectedConversationId"
-          :key="accessToken + ':' + selectedConversationId"
-          :token="accessToken"
-          :conversation-id="selectedConversationId"
-        />
-
-        <p v-else>请选择一条会话查看聊天记录。</p>
-      </div>
-
-      <button type="button" @click="handleLogout">
-        退出登录
-      </button>
     </section>
+    <span class="eyebrow">OMNISUPPORT AI / SECURE SESSION</span>
   </main>
+  <LoginForm v-else :notice="error" @logged-in="acceptLogin" />
 </template>

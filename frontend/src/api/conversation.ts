@@ -1,79 +1,23 @@
-import { API_BASE_URL } from './config'
+import { ApiError, isPage, isRecord, jsonRequest } from './http'
 
-// 一条会话摘要
 export interface ConversationSummary {
   id: string
   title: string
   created_at: string
   updated_at: string
 }
-
-// 会话列表的分页响应
 export interface ConversationListResponse {
   items: ConversationSummary[]
   total: number
   limit: number
   offset: number
 }
-
-// 分页查询当前客户的会话
-export async function getConversations(
-  token: string,
-  limit: number = 20,
-  offset: number = 0,
-): Promise<ConversationListResponse> {
-  const query = new URLSearchParams({
-    limit: String(limit),
-    offset: String(offset),
-  })
-
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/conversations?${query}`,
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  )
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error('登录凭证无效或已过期，请重新登录')
-    }
-
-    throw new Error(`获取会话列表失败，状态码：${response.status}`)
-  }
-
-  const data: ConversationListResponse | null = await response.json()
-
-  // 检查分页响应的基本结构
-  if (
-    !data ||
-    !Array.isArray(data.items) ||
-    !Number.isInteger(data.total) ||
-    data.total < 0 ||
-    !Number.isInteger(data.limit) ||
-    data.limit < 1 ||
-    data.limit > 100 ||
-    !Number.isInteger(data.offset) ||
-    data.offset < 0
-  ) {
-    throw new Error('会话列表响应格式异常')
-  }
-
-  return data
-}
-
-// 会话中的一条消息
 export interface ConversationMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
   created_at: string
 }
-
-// 消息列表的分页响应
 export interface ConversationMessagesResponse {
   conversation_id: string
   items: ConversationMessage[]
@@ -82,57 +26,57 @@ export interface ConversationMessagesResponse {
   offset: number
 }
 
-// 分页查询指定会话的历史消息
+function isSummary(value: unknown): value is ConversationSummary {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    typeof value.created_at === 'string' &&
+    typeof value.updated_at === 'string'
+  )
+}
+
+function isMessage(value: unknown): value is ConversationMessage {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    (value.role === 'user' || value.role === 'assistant') &&
+    typeof value.content === 'string' &&
+    typeof value.created_at === 'string'
+  )
+}
+
+export async function getConversations(
+  token: string,
+  limit = 20,
+  offset = 0,
+  signal?: AbortSignal,
+): Promise<ConversationListResponse> {
+  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+  const data = await jsonRequest(`/api/v1/conversations?${query}`, { token, signal })
+  if (!isPage(data) || !data.items.every(isSummary)) throw new ApiError('会话列表格式异常。')
+  return { items: data.items, total: data.total, limit: data.limit, offset: data.offset }
+}
+
 export async function getConversationMessages(
   token: string,
   conversationId: string,
-  limit: number = 20,
-  offset: number = 0,
+  limit = 20,
+  offset = 0,
+  signal?: AbortSignal,
 ): Promise<ConversationMessagesResponse> {
-  const query = new URLSearchParams({
-    limit: String(limit),
-    offset: String(offset),
-  })
-
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/conversations/${encodeURIComponent(conversationId)}/messages?${query}`,
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
+  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+  const data = await jsonRequest(
+    `/api/v1/conversations/${encodeURIComponent(conversationId)}/messages?${query}`,
+    { token, signal },
   )
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error('登录凭证无效或已过期，请重新登录')
-    }
-
-    if (response.status === 404) {
-      throw new Error('会话不存在或无法访问')
-    }
-
-    throw new Error(`获取历史消息失败，状态码：${response.status}`)
+  if (!isPage(data) || data.conversation_id !== conversationId || !data.items.every(isMessage))
+    throw new ApiError('历史消息格式异常。')
+  return {
+    conversation_id: conversationId,
+    items: data.items,
+    total: data.total,
+    limit: data.limit,
+    offset: data.offset,
   }
-
-  const data: ConversationMessagesResponse | null =
-    await response.json()
-
-  if (
-    !data ||
-    data.conversation_id !== conversationId ||
-    !Array.isArray(data.items) ||
-    !Number.isInteger(data.total) ||
-    data.total < 0 ||
-    !Number.isInteger(data.limit) ||
-    data.limit < 1 ||
-    data.limit > 100 ||
-    !Number.isInteger(data.offset) ||
-    data.offset < 0
-  ) {
-    throw new Error('历史消息响应格式异常')
-  }
-
-  return data
 }

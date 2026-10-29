@@ -1,55 +1,44 @@
-import { API_BASE_URL } from './config'
+import { ApiError, isRecord, jsonRequest } from './http'
 
-// 登录请求的数据结构
 export interface LoginRequest {
   email: string
   password: string
 }
-
-// 登录成功响应的数据结构
 export interface LoginResponse {
   access_token: string
   token_type: string
 }
 
-// 验证账号并取得访问凭证
-export async function login(
-  credentials: LoginRequest,
-): Promise<LoginResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/customers/login`,
-    {
+export async function login(credentials: LoginRequest): Promise<LoginResponse> {
+  let data: unknown
+  try {
+    data = await jsonRequest('/api/v1/customers/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
-    },
-  )
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error('邮箱或密码错误，或账号不可用')
-    }
-
-    if (response.status === 422) {
-      throw new Error('请检查邮箱和密码格式')
-    }
-
-    throw new Error(`登录失败，状态码：${response.status}`)
+    })
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401)
+      throw new ApiError('邮箱或密码错误，或账号不可用。', 401)
+    throw error
   }
-
-  const data: LoginResponse | null = await response.json()
-
-  // TypeScript 类型只在开发时检查，实际响应仍需要校验
   if (
-    !data ||
+    !isRecord(data) ||
     typeof data.access_token !== 'string' ||
     !data.access_token ||
     data.token_type !== 'bearer'
   ) {
-    throw new Error('登录响应格式异常')
+    throw new ApiError('登录响应格式异常。')
   }
+  return { access_token: data.access_token, token_type: data.token_type }
+}
 
-  return data
+export async function registerCustomer(
+  data: LoginRequest & { display_name: string },
+): Promise<void> {
+  await jsonRequest('/api/v1/customers/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
 }

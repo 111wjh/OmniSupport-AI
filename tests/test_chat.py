@@ -1,11 +1,13 @@
 
-from uuid import uuid4
+from uuid import UUID, uuid4
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.main import app, fastapi_app
+from app.core.auth import get_current_customer
 import httpx
 from openai import APITimeoutError, APIConnectionError
 from app.services.chat_service import (
@@ -14,6 +16,21 @@ from app.services.chat_service import (
 )
 
 client = TestClient(app)
+TEST_CUSTOMER_ID = UUID("00000000-0000-4000-8000-000000000001")
+
+
+@pytest.fixture(autouse=True)
+def authenticated_customer():
+    """隔离客户认证，不连接真实数据库；业务调用仍需传递客户身份。"""
+    previous = fastapi_app.dependency_overrides.copy()
+    fastapi_app.dependency_overrides[get_current_customer] = lambda: SimpleNamespace(
+        id=TEST_CUSTOMER_ID,
+    )
+    try:
+        yield
+    finally:
+        fastapi_app.dependency_overrides.clear()
+        fastapi_app.dependency_overrides.update(previous)
 
 
 def test_chat_creates_conversation():
@@ -43,10 +60,11 @@ def test_chat_creates_conversation():
         assert response.json()["reply"] == "您好，请问有什么需要帮助？"
         assert response.json()["conversation_id"] == str(conversation_id)
 
-        mock_resolve.assert_awaited_once_with(None)
+        mock_resolve.assert_awaited_once_with(None, customer_id=TEST_CUSTOMER_ID)
         mock_chat.assert_awaited_once_with(
             message="你好",
             conversation_id=conversation_id,
+            customer_id=TEST_CUSTOMER_ID,
         )
 
 
@@ -79,10 +97,11 @@ def test_chat_reuses_conversation():
         assert response.status_code == 200
         assert response.json()["conversation_id"] == str(conversation_id)
 
-        mock_resolve.assert_awaited_once_with(conversation_id)
+        mock_resolve.assert_awaited_once_with(conversation_id, customer_id=TEST_CUSTOMER_ID)
         mock_chat.assert_awaited_once_with(
             message="我的耳机坏了",
             conversation_id=conversation_id,
+            customer_id=TEST_CUSTOMER_ID,
         )
 
 
@@ -342,6 +361,55 @@ def test_chat_concurrency_errors_return_409(
         mock_chat.assert_awaited_once_with(
             message="我的耳机没有声音",
             conversation_id=conversation_id,
+            customer_id=TEST_CUSTOMER_ID,
         )
 
     print(f"{exception_type.__name__}: HTTP 409 passed!")
+
+
+def test_chat_requires_customer_authentication():
+    """没有客户认证时，禁止进入聊天和业务工具流程。"""
+    fastapi_app.dependency_overrides.pop(get_current_customer)
+    with patch("app.api.v1.chat.generate_reply_and_save", new_callable=AsyncMock) as mock_chat:
+        response = client.post("/api/v1/chat", json={"message": "你好"})
+    assert response.status_code == 401
+    mock_chat.assert_not_awaited()
+
+
+def test_stream_emits_done_after_reply_is_saved():
+    """SSE 传递文本与客户身份，并在聊天服务返回后才发送 done。"""
+    conversation_id = uuid4()
+
+    async def saved_reply(**kwargs):
+        assert kwargs["customer_id"] == TEST_CUSTOMER_ID
+        kwargs["on_text_delta"]("你好")
+        return "你好"
+
+    with (
+        patch("app.api.v1.chat.resolve_conversation_id", new_callable=AsyncMock, return_value=conversation_id),
+        patch("app.api.v1.chat.generate_reply_and_save", side_effect=saved_reply),
+    ):
+        response = client.post("/api/v1/chat/stream", json={"message": "你好"})
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    assert 'event: token' in response.text
+    assert 'event: done' in response.text
+    assert response.text.index('event: token') < response.text.index('event: done')
+    assert str(conversation_id) in response.text
+
+
+def test_stream_error_does_not_claim_completion():
+    """HTTP 200 后仍可能发生流式错误，不能发送 done 或清理已有会话。"""
+    conversation_id = uuid4()
+    with (
+        patch("app.api.v1.chat.resolve_conversation_id", new_callable=AsyncMock, return_value=conversation_id),
+        patch("app.api.v1.chat.generate_reply_and_save", new_callable=AsyncMock, side_effect=ConversationBusyError()),
+        patch("app.api.v1.chat.delete_empty_conversation", new_callable=AsyncMock) as mock_cleanup,
+    ):
+        response = client.post("/api/v1/chat/stream", json={"message": "你好", "conversation_id": str(conversation_id)})
+
+    assert response.status_code == 200
+    assert 'event: error' in response.text
+    assert 'event: done' not in response.text
+    mock_cleanup.assert_not_awaited()

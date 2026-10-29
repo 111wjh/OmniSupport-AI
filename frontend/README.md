@@ -1,5 +1,56 @@
-# Vue 3 + TypeScript + Vite
+# OmniSupport AI · 客户工作台
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Vue 3 + TypeScript + Vite 实现的多模态智能客服前端。现有 Python 后端保持在项目根目录的 `app/` 中。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## 本地运行
+
+在仓库的 `frontend` 目录执行：
+
+```powershell
+npm install
+npm run dev
+```
+
+打开 `http://127.0.0.1:5173`。后端默认地址为 `http://127.0.0.1:8000`，需要单独启动：
+
+```powershell
+# 在仓库根目录执行
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+使用现有客户账号登录；也可以通过注册页创建客户账号。前端不会自动创建工作人员账号或修改权限。
+
+## 功能
+
+- 客户注册、登录、退出；同一标签页刷新后恢复并重新验证登录状态。
+- 会话列表分页、已加载会话搜索、新建对话、历史消息读取。
+- 默认定位最近 20 条消息；可以向前加载更早记录，切换会话时取消旧的读取请求。
+- 文字聊天支持普通 JSON 响应和 SSE 流式回复。收到 `done` 后才确认保存完成。
+- JPG、PNG、WEBP 图片预览与问答；最大 5 MB，问题最多 1000 字符。
+- Markdown 标题、列表、表格和代码块；HTML 经 DOMPurify 白名单清理。
+- 复制消息、复制会话编号、导出已加载的聊天记录。
+- 桌面三栏布局、平板和手机抽屉导航，支持减少动态效果的系统偏好。
+
+原图片没有被后端持久化，重新打开历史会话时显示客户问题与可展开的 AI 图片观察记录。前端页面中的消息总数来自后端或已确认保存的响应，不使用演示数字。
+
+## 配置与检查
+
+如需更换后端地址，在本目录新建 `.env.local`，参考 `.env.example` 配置 `VITE_API_BASE_URL`，然后重启 Vite。`VITE_` 变量会进入浏览器，不能放模型密钥或数据库密码。更换前端端口或部署域名时，后端 CORS 也需允许对应来源。
+
+```powershell
+npm run typecheck
+npm run build
+npm run format:check
+```
+
+`npm run format` 格式化源代码。部署文件生成在 `dist/`，不要手动修改或提交该目录。
+
+## 代码导读
+
+阅读 [前端代码导读](docs/前端代码导读.md)，从 `App.vue → useAuth → SupportWorkspace → useChat` 的调用关系开始。
+
+## 本轮验证说明
+
+类型检查和生产构建通过。浏览器功能验收使用独立本地模拟接口，未向真实订单或退款记录写入数据，验证登录错误、会话翻页与搜索、32 条历史记录连续加载、快速切换、普通与 SSE 聊天、SSE 错误处理、图片表单、刷新后恢复登录、Markdown 内容清理及手机抽屉布局。
+
+`docs/screenshots/` 的工作台截图使用模拟数据，仅用于展示界面。正式运行仍调用配置的真实后端；完整模型、知识库和业务工具联调需使用你的真实客户账号验证。

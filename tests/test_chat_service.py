@@ -1,6 +1,6 @@
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 from app.services.chat_service import generate_reply_and_save
@@ -51,7 +51,7 @@ def test_generate_reply_and_save_success():
             "app.services.chat_service.format_history_for_llm",
         ) as mock_format,
         patch(
-            "app.services.chat_service.generate_llm_reply",
+            "app.services.chat_service.generate_agent_reply",
             new_callable=AsyncMock,
         ) as mock_llm,
         patch(
@@ -96,7 +96,11 @@ def test_generate_reply_and_save_success():
         )
         mock_llm.assert_awaited_once_with(
             message="你好",
+            workflow_thread_id=ANY,
             history=formatted_history,
+            customer_id=None,
+            image_observation=None,
+            on_text_delta=None,
         )
 
         # 4. 使用 Token 保存用户消息和 AI 回复
@@ -130,7 +134,7 @@ def test_generate_reply_and_save_rejects_busy_conversation():
             new_callable=AsyncMock,
         ) as mock_acquire,
         patch(
-            "app.services.chat_service.generate_llm_reply",
+            "app.services.chat_service.generate_agent_reply",
             new_callable=AsyncMock,
         ) as mock_llm,
         patch(
@@ -191,7 +195,7 @@ def test_generate_reply_and_save_releases_lock_on_llm_error():
             "app.services.chat_service.format_history_for_llm",
         ) as mock_format,
         patch(
-            "app.services.chat_service.generate_llm_reply",
+            "app.services.chat_service.generate_agent_reply",
             new_callable=AsyncMock,
         ) as mock_llm,
         patch(
@@ -256,7 +260,7 @@ def test_generate_reply_and_save_handles_expired_token():
             "app.services.chat_service.format_history_for_llm",
         ) as mock_format,
         patch(
-            "app.services.chat_service.generate_llm_reply",
+            "app.services.chat_service.generate_agent_reply",
             new_callable=AsyncMock,
         ) as mock_llm,
         patch(
@@ -331,7 +335,7 @@ def test_release_error_does_not_mask_llm_error():
             "app.services.chat_service.format_history_for_llm",
         ) as mock_format,
         patch(
-            "app.services.chat_service.generate_llm_reply",
+            "app.services.chat_service.generate_agent_reply",
             new_callable=AsyncMock,
         ) as mock_llm,
         patch(
