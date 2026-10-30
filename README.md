@@ -204,22 +204,21 @@ Windows 下手写异步数据库脚本时，Psycopg 需要兼容的 Selector 事
 
 ### 准备可复现的演示订单
 
-仓库没有订单创建页面。先在客户页面注册 `demo@example.com`，再向**演示数据库**执行以下 SQL；邮箱可替换为你自己注册的测试账号：
+先注册并启用一个客户账号，然后在项目根目录、已激活虚拟环境的终端中运行：
 
-```sql
-INSERT INTO orders (
-    id, order_number, customer_id, customer_name,
-    product_name, total_amount, status, purchased_at
-)
-SELECT
-    gen_random_uuid(), 'DEMO-ORDER-001', id, display_name,
-    '蓝牙无线耳机 Pro', 99.00, 'paid', now()
-FROM customers
-WHERE email = 'demo@example.com'
-ON CONFLICT (order_number) DO NOTHING;
+```powershell
+python -m app.commands.create_demo_order
 ```
 
-客户可以发送：「请为订单 DEMO-ORDER-001 提交退款申请，原因是商品不符合使用需求。」这会创建真实的演示数据库记录。
+按提示输入已注册的客户邮箱、商品名称和金额。商品名称和金额直接回车时，默认使用“联调演示商品”和 `99.00`。
+
+命令使用当前配置的 `DATABASE_URL`。每次成功运行都会创建一条新订单，订单号以 `OMNI-DEMO-` 开头，商品名称追加“模拟”标识。订单的 `paid` 状态仅用于业务联调，不代表真实支付。
+
+使用该客户的 Token，通过 `GET /api/v1/orders` 查看订单，或通过 `GET /api/v1/orders/{order_number}` 查询详情。
+
+随后可以向客服发送：“请为订单【命令输出的订单号】提交退款申请，原因是商品不符合使用需求。”请将占位内容替换为实际订单号。
+
+已手工验证：命令创建订单、客户查询订单、Agent 提交退款申请并返回待审核状态。
 
 工作人员账号由本地受控命令创建：
 
