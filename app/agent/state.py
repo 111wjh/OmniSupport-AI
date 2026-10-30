@@ -18,5 +18,5 @@ class AgentState(TypedDict):
     model_calls: int
     # 是否启用流式输出；未提供时默认为 False
     stream_enabled: NotRequired[bool]
-    # 本轮成功提交的退款申请编号，未提交时为 None
-    submitted_refund_id: NotRequired[str | None]
+    # 本轮退款提交工具执行后，根据真实结果生成的回复。
+    refund_submission_reply: NotRequired[str | None]

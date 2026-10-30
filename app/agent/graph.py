@@ -8,7 +8,7 @@ from app.agent.nodes import (
     route_after_model,
     route_after_tools,
     handle_call_limit,
-    handle_refund_submitted,
+    handle_refund_submission_result,
 )
 
 
@@ -21,7 +21,7 @@ def build_agent_graph(checkpointer=None):
     workflow.add_node("model", call_model)
     workflow.add_node("tools", execute_tools)
     workflow.add_node("limit", handle_call_limit)
-    workflow.add_node("refund_submitted", handle_refund_submitted)
+    workflow.add_node("refund_submission_result", handle_refund_submission_result)
 
     # 工作流入口
     workflow.add_edge(START, "model")
@@ -43,12 +43,12 @@ def build_agent_graph(checkpointer=None):
         route_after_tools,
         {
             "model": "model",
-            "refund_submitted": "refund_submitted",
+            "refund_submission_result": "refund_submission_result",
         },
     )
 
     # 退款提交回复完成后，结束本次工作流
-    workflow.add_edge("refund_submitted", END)
+    workflow.add_edge("refund_submission_result", END)
 
     # 达到调用上限后结束
     workflow.add_edge("limit", END)

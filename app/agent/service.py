@@ -40,7 +40,7 @@ async def generate_agent_reply(
          "messages": messages,
          "customer_id": customer_id,
          "model_calls": 0,
-         "submitted_refund_id": None,
+         "refund_submission_reply": None,
         }
 
         graph_config = {

@@ -14,7 +14,7 @@ from app.agent.stream_model import request_streamed_model
 #自定义事件写入器。
 from langgraph.config import get_stream_writer
 from app.mcp_client.catalog import build_agent_tools
-
+from app.agent.refund_reply import build_refund_submission_reply
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +200,7 @@ async def execute_tools(
 
     # 3. 逐个执行模型请求的工具
     tool_messages = []
-    submitted_refund_id = None
+    refund_submission_reply = None
 
     for tool_call in tool_calls:
         function = tool_call["function"]
@@ -274,24 +274,14 @@ async def execute_tools(
                 tool_result.get("error", "unknown_error"),
                 duration_ms,
             )
-
-                # 仅在本次只调用退款提交工具，且提交成功时，
-        # 记录申请编号，供后续路由使用。
+        # 本轮只有一次退款提交调用时，根据实际工具结果生成回复。
         if (
             len(tool_calls) == 1
             and tool_name == "submit_refund_request"
-            and tool_result.get("success") is True
         ):
-            refund_data = tool_result.get("data")
-
-            if (
-                isinstance(refund_data, dict)
-                and refund_data.get("status") == "pending"
-            ):
-                refund_id = refund_data.get("id")
-
-                if isinstance(refund_id, str) and refund_id.strip():
-                    submitted_refund_id = refund_id
+            refund_submission_reply = build_refund_submission_reply(
+                tool_result
+            )
         # 4. 将执行结果转换为模型可以读取的工具消息
         tool_messages.append({
             "role": "tool",
@@ -305,7 +295,7 @@ async def execute_tools(
     # 5. 将工具结果追加到 LangGraph 状态
     return {
         "messages": tool_messages,
-        "submitted_refund_id": submitted_refund_id,
+        "refund_submission_reply": refund_submission_reply,
     }
 
 
@@ -348,37 +338,33 @@ def handle_call_limit(
 
 
 def route_after_tools(state: AgentState) -> str:
-    """根据退款提交结果，决定工具执行后的下一步。"""
+    """存在退款提交回复时，进入固定回复节点。"""
 
-    if state.get("submitted_refund_id"):
-        return "refund_submitted"
+    reply = state.get("refund_submission_reply")
+
+    if isinstance(reply, str) and reply.strip():
+        return "refund_submission_result"
 
     return "model"
 
 
-def handle_refund_submitted(
+
+def handle_refund_submission_result(
     state: AgentState,
 ) -> dict[str, Any]:
-    """根据真实提交结果，生成待审核回复。"""
+    """输出根据真实工具结果生成的退款提交回复。"""
 
-    refund_id = state.get("submitted_refund_id")
+    reply = state.get("refund_submission_reply")
 
-    if not isinstance(refund_id, str) or not refund_id.strip():
-        raise ValueError("退款提交回复节点缺少申请编号")
-
-    reply = (
-        "退款申请已成功提交，提交时状态为待审核。\n"
-        f"申请编号：{refund_id}\n"
-        "后续由有权限的工作人员审核；"
-        "审核通过后，还需单独执行模拟退款。\n"
-        "你可以稍后询问审核进度或退款执行结果。"
-    )
+    if not isinstance(reply, str) or not reply.strip():
+        raise ValueError("退款提交回复节点缺少回复内容")
 
     logger.info(
-        "LangGraph 退款提交回复节点：request_id=%s",
+        "LangGraph 退款提交结果回复节点：request_id=%s",
         get_request_id(),
     )
 
+    # 流式模式下，将相同的回复发送给客户端。
     if state.get("stream_enabled", False):
         writer = get_stream_writer()
         writer({
@@ -393,5 +379,5 @@ def handle_refund_submitted(
                 "content": reply,
             }
         ],
-        "submitted_refund_id": None,
+        "refund_submission_reply": None,
     }
