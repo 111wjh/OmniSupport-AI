@@ -29,7 +29,22 @@ if not settings.DATABASE_URL:
 
 # 告诉 Alembic 使用哪些 ORM 模型
 target_metadata = Base.metadata
+# 这些表由 LangGraph Checkpointer 自行管理。
+CHECKPOINTER_TABLES = {
+    "checkpoints",
+    "checkpoint_blobs",
+    "checkpoint_writes",
+    "checkpoint_migrations",
+}
 
+
+def include_name(name, type_, parent_names):
+    """自动生成迁移时，排除 LangGraph 管理的表。"""
+
+    if type_ == "table" and name in CHECKPOINTER_TABLES:
+        return False
+
+    return True
 
 def run_migrations_offline() -> None:
     """离线模式：不连接数据库，生成 SQL。"""
@@ -40,6 +55,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        include_name=include_name,
     )
 
     with context.begin_transaction():
@@ -61,6 +77,7 @@ def run_migrations_online() -> None:
                 connection=connection,
                 target_metadata=target_metadata,
                 compare_type=True,
+                include_name=include_name,
             )
 
             with context.begin_transaction():

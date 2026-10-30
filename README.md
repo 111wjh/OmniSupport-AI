@@ -6,7 +6,7 @@
 
 项目重点是 AI 应用后端与业务流程工程化：模型负责理解和选择工具，身份、订单归属、状态流转及数据库写入由服务端校验。当前为个人工程实践项目，退款执行是**数据库内的模拟流程，不涉及真实支付或资金转移**。
 
-[界面预览](#界面预览) · [系统架构](#系统架构) · [工程实现](#工程实现) · [本地运行](#本地运行) · [验证与边界](#验证与边界)
+[界面预览](#界面预览) · [系统架构](#系统架构) · [工程实现](#工程实现) · [本地运行](#本地运行) · [人工工单](#人工工单流程) · [验证与边界](#验证与边界)
 
 ## 界面预览
 
@@ -31,6 +31,7 @@
 | 企业知识问答   | Markdown 分段、Embedding、Qdrant 稠密向量与 BM25 检索、RRF 融合、Rerank 重排         |
 | Agent 工具协作 | LangGraph 条件路由、本地工具、MCP 工具发现与调用、模型调用次数限制                   |
 | 订单与退款     | 查询本人订单、提交申请、查询审核状态与模拟执行结果；工作人员通过独立接口审核和执行   |
+| 人工工单 | API 创建工单、关联本人订单和会话、客服领取、双方顺序回复、关闭及历史读取 |
 | 身份与权限     | 客户/员工独立账号、Argon2 密码哈希、JWT 身份类型校验、员工角色限制、客户数据归属检查 |
 | 会话与并发     | PostgreSQL 会话历史、稳定消息排序、分页、数据库租约、续期与处理权校验                |
 | 可观测性       | Request ID、接口耗时、模型/工具日志、Langfuse 观测、PostgreSQL Checkpointer          |
@@ -55,6 +56,9 @@ flowchart LR
     Chat --> PG
     API --> Review[员工审核与模拟执行接口]
     Review --> PG
+    Ops[Swagger / Apifox] --> API
+    API --> Tickets[人工工单 API：领取、回复与关闭]
+    Tickets --> PG
     Graph -.观测.-> LF[Langfuse]
     Graph -.工作流检查点.-> PG
 ```
@@ -92,9 +96,9 @@ Agent 可提交退款申请，但不能使用客户身份审核申请或执行�
 - 审核与执行使用行锁处理竞争；模拟执行记录、订单状态和成功审计在同一事务提交。
 - 重复执行已成功的申请返回同一执行记录，不再次创建退款记录。
 - 审核审计表通过数据库触发器限制常规 `UPDATE` / `DELETE`，保留追加历史。
-- 单一退款提交工具在本轮成功时，路由到固定回复节点，明确区分「已提交」「已审核」「已执行」。
+- 工具节点本次只执行一个退款提交工具时，根据真实结果生成成功、明确拒绝或结果无法确认的固定回复；普通与流式接口共用该逻辑。
 
-入口代码：[Agent 路由](app/agent/graph.py)、[退款申请服务](app/services/refund_service.py)、[模拟执行服务](app/services/refund_execution_service.py)。
+入口代码：[Agent 路由](app/agent/graph.py)、[退款提交回复](app/agent/refund_reply.py)、[退款申请服务](app/services/refund_service.py)、[模拟执行服务](app/services/refund_execution_service.py)。
 
 ### 2. 会话租约与过期请求隔离
 
@@ -176,6 +180,8 @@ CREATE DATABASE omnisupport_ai OWNER omnisupport_app;
 
 Qdrant 初始化和知识导入需要对应服务及模型可用。FastAPI 启动时会执行 Checkpointer 的表初始化。MCP 商品 Server 由 Client 通过当前 Python 解释器按需以 stdio 启动，无需另开 HTTP 服务。
 
+业务表由 Alembic 迁移管理；`checkpoints`、`checkpoint_blobs`、`checkpoint_writes`、`checkpoint_migrations` 由 LangGraph 管理。[迁移配置](migrations/env.py) 在自动生成时排除这四张表，避免混入无关删表操作。生成的迁移文件仍需检查后再执行升级。
+
 在另一个终端进入仓库根目录，再启动前端：
 
 ```powershell
@@ -201,6 +207,7 @@ Windows 下手写异步数据库脚本时，Psycopg 需要兼容的 Selector 事
 3. 上传商品图片，询问外观与可见破损，再在同一会话继续文字追问。
 4. 在演示数据库准备本人测试订单，查询订单并申请退款。
 5. 使用独立工作人员身份在 Swagger / Apifox 审核申请，再执行模拟退款，客户随后查询结果。
+6. 通过工单 API 创建关联订单和会话的人工工单；客服或管理员领取后与客户互相回复，关闭工单，再核对历史读取与关闭后的写入限制。
 
 ### 准备可复现的演示订单
 
@@ -226,25 +233,69 @@ python -m app.commands.create_demo_order
 .\.venv\Scripts\python.exe -m app.commands.create_staff
 ```
 
-选择 `refund_reviewer` 或 `admin`，设置自己的密码。客户 Token 与员工 Token 不能混用。当前客户工作台不提供员工审核页面。
+退款审核与模拟执行使用 `refund_reviewer` 或 `admin`；人工工单处理使用 `customer_support` 或 `admin`。创建账号时设置自己的密码。客户 Token 与员工 Token 不能混用，员工功能当前通过 Swagger / Apifox 操作。
 
 ### 主要接口
 
-| 方法与路径                                                              | 用途               | 身份             |
-| ----------------------------------------------------------------------- | ------------------ | ---------------- |
-| `POST /api/v1/customers/register`、`/login`                             | 注册与登录         | 公开入口         |
-| `GET /api/v1/customers/me`                                              | 当前客户资料       | 客户             |
-| `POST /api/v1/chat`、`/chat/stream`                                     | 普通/流式对话      | 客户             |
-| `POST /api/v1/images/upload`                                            | multipart 图片问答 | 客户             |
-| `GET /api/v1/conversations`                                             | 本人会话分页       | 客户             |
-| `GET /api/v1/conversations/{id}/messages`                               | 本人历史消息分页   | 客户             |
-| `POST /api/v1/refunds`、`GET /api/v1/refunds`                           | 提交与查询本人申请 | 客户             |
-| `GET /api/v1/refunds/{id}/execution`                                    | 本人模拟退款结果   | 客户             |
-| `POST /api/v1/staff/login`                                              | 员工登录           | 公开入口         |
-| `GET /api/v1/refunds/pending`                                           | 待审核申请         | 有审核权限的员工 |
-| `POST /api/v1/refunds/{id}/review`、`POST /api/v1/refunds/{id}/execute` | 审核、模拟执行     | 有审核权限的员工 |
+| 方法与路径 | 用途 | 身份 |
+| --- | --- | --- |
+| `POST /api/v1/customers/register`、`/login` | 注册与登录 | 公开入口 |
+| `GET /api/v1/customers/me` | 当前客户资料 | 客户 |
 | `GET /api/v1/orders` | 本人订单分页列表 | 客户 |
 | `GET /api/v1/orders/{order_number}` | 本人订单详情 | 客户 |
+| `POST /api/v1/chat`、`/chat/stream` | 普通/流式对话 | 客户 |
+| `POST /api/v1/images/upload` | multipart 图片问答 | 客户 |
+| `GET /api/v1/conversations` | 本人会话分页 | 客户 |
+| `GET /api/v1/conversations/{id}/messages` | 本人历史消息分页 | 客户 |
+| `POST /api/v1/refunds`、`GET /api/v1/refunds` | 提交与查询本人申请 | 客户 |
+| `GET /api/v1/refunds/{id}/execution` | 本人模拟退款结果 | 客户 |
+| `POST /api/v1/staff/login` | 员工登录 | 公开入口 |
+| `GET /api/v1/staff/me` | 当前员工资料与角色 | 员工 |
+| `GET /api/v1/refunds/pending` | 待审核申请 | 有审核权限的员工 |
+| `POST /api/v1/refunds/{id}/review`、`POST /api/v1/refunds/{id}/execute` | 审核、模拟执行 | 有审核权限的员工 |
+
+## 人工工单流程
+
+客户可以提交人工服务工单，关联本人订单和 AI 会话；客服或管理员从待领取队列领取工单，与客户沟通后关闭。工单当前通过 API 操作，尚未接入 Agent 自动创建工单工具及工单前端。
+
+状态流转：`open`（待领取）→ `in_progress`（处理中）→ `closed`（已关闭）。
+
+### 权限与事务设计
+
+- 客户只能查询和回复自己的工单，关联订单、会话时也会校验归属。
+- 员工路由统一校验 `customer_support` 或 `admin` 角色；本人处理列表、详情、回复和关闭操作还会校验处理员工，管理员通过这些入口也遵守本人处理范围。
+- 领取、回复和关闭操作锁定同一条工单记录，串行处理同一工单上的状态变更；锁定查询使用 `populate_existing=True` 更新 Session 中可能缓存的状态。
+- 回复使用工单内递增序号，数据库通过 `(ticket_id, message_seq)` 唯一约束防止序号重复；回复记录与工单活动时间在同一事务提交。
+- 处理中由同一员工重复领取、关闭后由原处理员工重复关闭，均返回已有结果，不覆盖原关闭时间。
+- 关闭后双方继续回复返回 `409`，已有沟通记录仍可读取；关闭工单不会自动审核退款，也不会修改订单或执行退款。
+
+### 主要工单接口
+
+| 方法与路径 | 用途 | 身份范围 |
+| --- | --- | --- |
+| `POST /api/v1/tickets` | 创建工单 | 客户 |
+| `GET /api/v1/tickets` | 本人工单分页及状态筛选 | 客户 |
+| `GET /api/v1/tickets/{id}` | 本人工单详情 | 所属客户 |
+| `GET`、`POST /api/v1/tickets/{id}/messages` | 读取记录、补充说明 | 所属客户 |
+| `GET /api/v1/staff/tickets/queue` | 待领取队列，按创建时间从早到晚排列 | 客服或管理员 |
+| `POST /api/v1/staff/tickets/{id}/claim` | 领取工单 | 客服或管理员 |
+| `GET /api/v1/staff/tickets/mine` | 本人处理的工单及状态筛选 | 处理员工 |
+| `GET /api/v1/staff/tickets/{id}` | 本人处理的工单详情 | 处理员工 |
+| `GET`、`POST /api/v1/staff/tickets/{id}/messages` | 读取记录、回复客户 | 处理员工 |
+| `POST /api/v1/staff/tickets/{id}/close` | 关闭工单 | 处理员工 |
+
+列表接口使用 `limit` / `offset` 分页；回复按 `message_seq` 从早到晚排列。工单创建请求只接收问题标题、描述及可选的订单号和会话编号；回复请求只接收 `content`，身份、状态与序号由后端填写。
+
+### 已验证范围与当前边界
+
+已通过人工接口联调验证创建及关联本人订单和会话、客户查询与状态筛选、跨客户详情拒绝、管理员领取、本人重复领取、本人处理列表、双方顺序回复与读取、关闭及重复关闭，以及关闭后双方拒绝追加回复、既有沟通记录保持不变。
+
+现有 24 项自动化测试仍覆盖聊天接口与服务回归，尚未增加工单真实数据库并发测试。行锁和唯一约束是当前代码设计，不代表已完成多客服并发抢单、回复与关闭竞争的集成验证。
+
+创建工单和新增回复未提供请求级幂等键，每次成功请求都会新增记录。当前工单功能暂不支持回复附件、重新分配、重开及独立的工单事件审计。
+
+入口代码：[客户工单接口](app/api/v1/tickets.py)、[员工工单接口](app/api/v1/staff_tickets.py)、[工单服务](app/services/ticket_service.py)、[工单回复服务](app/services/ticket_message_service.py)。
+
 ## 验证与边界
 
 订单接口已手工验证本人订单列表、详情、分页、不存在订单及跨客户查询的拒绝响应。
@@ -253,7 +304,7 @@ python -m app.commands.create_demo_order
 
 ```powershell
 # 根目录：当前 24 项后端测试
-.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider
 
 # 前端目录
 cd frontend
@@ -270,25 +321,25 @@ npm run format:check
 
 - 退款没有接入真实支付网关；未实现支付回调、外部幂等键、对账与补偿任务。
 - 权限按客户账号和员工角色隔离，尚未实现企业级多组织租户体系。
-- 单次退款提交工具调用后，由代码根据实际结果生成成功、明确拒绝或结果无法确认的回复，普通与流式接口共用该逻辑。目前已手工验证重复申请在两种接口中的回复；多个工具混合调用，以及模型未调用工具却描述业务操作的情况，仍需进一步完善。
+- 单次退款提交工具调用后，由代码根据实际结果生成成功、明确拒绝或结果无法确认的回复，普通与流式接口共用该逻辑。目前已手工验证普通接口提交成功，以及重复申请在普通与流式接口中的回复；多个工具混合调用，以及模型未调用工具却描述业务操作的情况，仍需进一步完善。
 - Checkpointer 记录每轮工作流；当前每轮使用独立 workflow ID，对话连续性来自消息历史，不等同于已实现任意中断点的跨轮自动恢复。
 - 知识库目前为示例售后文档，尚无检索质量基准、生产压测或完整覆盖率统计。
 - 原图片未持久化，未实现对象存储、上传扫描和图片历史恢复。
-- 员工审核通过接口完成；部署、CI/CD、监控告警和完整端到端业务回归仍待完善。
+- 员工审核和人工工单处理通过 API 完成；部署、CI/CD、监控告警和完整端到端业务回归仍待完善。
 
 ## 代码导航
 
 ```text
 app/
-├── api/v1/             客户、会话、图像、退款和员工接口
+├── api/v1/             客户、会话、图像、订单、退款、工单和员工接口
 ├── agent/              LangGraph 节点、路由、流式模型与状态
 ├── tools/              本地工具定义与可信客户上下文执行
-├── services/           聊天、检索、图像及业务服务
+├── services/           聊天、检索、图像及订单、退款、工单业务服务
 ├── mcp_client/         工具发现、白名单、Schema 转换与调用
 ├── mcp_server/         演示商品工具
 ├── models/、schemas/   ORM 模型与请求响应结构
 ├── core/               认证、配置、Request ID、Checkpointer、观测
-└── commands/           工作人员账号创建命令
+└── commands/           工作人员账号与演示订单创建命令
 frontend/src/
 ├── api/                公共请求与业务接口
 ├── composables/        登录和聊天状态
