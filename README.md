@@ -244,8 +244,11 @@ ON CONFLICT (order_number) DO NOTHING;
 | `POST /api/v1/staff/login`                                              | 员工登录           | 公开入口         |
 | `GET /api/v1/refunds/pending`                                           | 待审核申请         | 有审核权限的员工 |
 | `POST /api/v1/refunds/{id}/review`、`POST /api/v1/refunds/{id}/execute` | 审核、模拟执行     | 有审核权限的员工 |
-
+| `GET /api/v1/orders` | 本人订单分页列表 | 客户 |
+| `GET /api/v1/orders/{order_number}` | 本人订单详情 | 客户 |
 ## 验证与边界
+
+订单接口已手工验证本人订单列表、详情、分页、不存在订单及跨客户查询的拒绝响应。
 
 ### 自动化检查
 
