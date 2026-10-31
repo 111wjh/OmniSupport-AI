@@ -26,6 +26,7 @@ from app.services.refund_service import (
     RefundNotAllowedError,
     RefundAlreadyExistsError,
 )
+from app.tools.ticket_tools import execute_create_support_ticket
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -105,6 +106,7 @@ async def execute_tool(
     tool_name: str,
     arguments: str,
     customer_id: UUID | None = None,
+    conversation_id: UUID | None = None,
 ) -> dict:
     """统一执行 Agent 工具。"""
 
@@ -112,6 +114,13 @@ async def execute_tool(
     "Agent tool requested: %s",
     tool_name,
     )
+    # 为当前客户创建人工服务工单。
+    if tool_name == "create_support_ticket":
+        return await execute_create_support_ticket(
+            arguments=arguments,
+            customer_id=customer_id,
+            conversation_id=conversation_id,
+        )
 
     # 1. 执行知识库检索工具
     if tool_name == "search_knowledge":
