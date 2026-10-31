@@ -101,6 +101,7 @@ def test_generate_reply_and_save_success():
             customer_id=None,
             image_observation=None,
             on_text_delta=None,
+            conversation_id=conversation_id,
         )
 
         # 4. 使用 Token 保存用户消息和 AI 回复

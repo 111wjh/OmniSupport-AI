@@ -15,7 +15,7 @@ from app.agent.stream_model import request_streamed_model
 from langgraph.config import get_stream_writer
 from app.mcp_client.catalog import build_agent_tools
 from app.agent.refund_reply import build_refund_submission_reply
-
+from app.agent.ticket_reply import build_ticket_creation_reply
 logger = logging.getLogger(__name__)
 
 
@@ -201,6 +201,7 @@ async def execute_tools(
     # 3. 逐个执行模型请求的工具
     tool_messages = []
     refund_submission_reply = None
+    ticket_creation_reply = None
 
     for tool_call in tool_calls:
         function = tool_call["function"]
@@ -231,6 +232,7 @@ async def execute_tools(
                     tool_name=tool_name,
                     arguments=function["arguments"],
                     customer_id=state["customer_id"],
+                    conversation_id=state.get("conversation_id"),
                 )
             except Exception:
                 logger.exception(
@@ -274,14 +276,17 @@ async def execute_tools(
                 tool_result.get("error", "unknown_error"),
                 duration_ms,
             )
-        # 本轮只有一次退款提交调用时，根据实际工具结果生成回复。
-        if (
-            len(tool_calls) == 1
-            and tool_name == "submit_refund_request"
-        ):
-            refund_submission_reply = build_refund_submission_reply(
-                tool_result
-            )
+        # 当前批次只有一个工具调用时，生成对应业务的固定回执。
+        if len(tool_calls) == 1:
+            if tool_name == "submit_refund_request":
+                refund_submission_reply = (
+                    build_refund_submission_reply(tool_result)
+                )
+
+            elif tool_name == "create_support_ticket":
+                ticket_creation_reply = (
+                    build_ticket_creation_reply(tool_result)
+                )
         # 4. 将执行结果转换为模型可以读取的工具消息
         tool_messages.append({
             "role": "tool",
@@ -296,6 +301,7 @@ async def execute_tools(
     return {
         "messages": tool_messages,
         "refund_submission_reply": refund_submission_reply,
+        "ticket_creation_reply": ticket_creation_reply,
     }
 
 
@@ -338,12 +344,17 @@ def handle_call_limit(
 
 
 def route_after_tools(state: AgentState) -> str:
-    """存在退款提交回复时，进入固定回复节点。"""
+    """有业务回执时进入对应回复节点，否则继续调用模型。"""
 
-    reply = state.get("refund_submission_reply")
+    refund_reply = state.get("refund_submission_reply")
 
-    if isinstance(reply, str) and reply.strip():
+    if isinstance(refund_reply, str) and refund_reply.strip():
         return "refund_submission_result"
+
+    ticket_reply = state.get("ticket_creation_reply")
+
+    if isinstance(ticket_reply, str) and ticket_reply.strip():
+        return "ticket_creation_result"
 
     return "model"
 
@@ -380,4 +391,38 @@ def handle_refund_submission_result(
             }
         ],
         "refund_submission_reply": None,
+    }
+
+
+def handle_ticket_creation_result(
+    state: AgentState,
+) -> dict[str, Any]:
+    """输出根据真实工具结果生成的工单创建回复。"""
+
+    reply = state.get("ticket_creation_reply")
+
+    if not isinstance(reply, str) or not reply.strip():
+        raise ValueError("工单创建结果回复节点缺少回复内容")
+
+    logger.info(
+        "LangGraph 工单创建结果回复节点：request_id=%s",
+        get_request_id(),
+    )
+
+    # 流式模式下，将同一份回执发送给客户端。
+    if state.get("stream_enabled", False):
+        writer = get_stream_writer()
+        writer({
+            "type": "token",
+            "content": reply,
+        })
+
+    return {
+        "messages": [
+            {
+                "role": "assistant",
+                "content": reply,
+            }
+        ],
+        "ticket_creation_reply": None,
     }

@@ -20,3 +20,7 @@ class AgentState(TypedDict):
     stream_enabled: NotRequired[bool]
     # 本轮退款提交工具执行后，根据真实结果生成的回复。
     refund_submission_reply: NotRequired[str | None]
+    # 当前聊天会话，由后端传入，供工单关联使用。
+    conversation_id: NotRequired[UUID | None]
+    # 根据本轮工单创建工具的实际结果生成的回复。
+    ticket_creation_reply: NotRequired[str | None]

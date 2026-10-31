@@ -122,6 +122,7 @@ async def generate_reply_and_save(
             customer_id=customer_id,
             image_observation=image_observation,
             on_text_delta=on_text_delta,
+            conversation_id=conversation_id,
         )
 
         # 5. 如果续期已经失败，不继续保存

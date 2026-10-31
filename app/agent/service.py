@@ -15,6 +15,7 @@ async def generate_agent_reply(
     customer_id: UUID | None = None,
     image_observation: str | None = None,
     on_text_delta: Callable[[str], None] | None = None,
+    conversation_id: UUID | None = None,
 ) -> str:
     """通过 LangGraph 生成客服回复，支持可选的流式文本回调。"""
 
@@ -39,8 +40,10 @@ async def generate_agent_reply(
         initial_state = {
          "messages": messages,
          "customer_id": customer_id,
+         "conversation_id": conversation_id,
          "model_calls": 0,
          "refund_submission_reply": None,
+         "ticket_creation_reply": None,
         }
 
         graph_config = {
