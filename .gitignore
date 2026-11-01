@@ -30,3 +30,6 @@ logs/
 # 操作系统文件
 .DS_Store
 Thumbs.db
+
+# 独立评测环境
+.venv-eval/

@@ -164,3 +164,50 @@ async def search_hybrid_knowledge(
         })
 
     return results
+
+
+async def search_bm25_knowledge(
+    query_text: str,
+    top_k: int = 3,
+    qdrant_url: str | None = None,
+    collection_name: str = "omnisupport_knowledge",
+) -> list[dict]:
+    """使用 Qdrant 的 BM25 全文索引检索知识。"""
+
+    if not query_text.strip():
+        return []
+
+    if top_k < 1:
+        raise ValueError("top_k 必须大于 0。")
+
+    settings = get_settings()
+
+    client = AsyncQdrantClient(
+        url=qdrant_url or settings.QDRANT_URL,
+        api_key=settings.QDRANT_API_KEY or None,
+    )
+
+    try:
+        response = await client.query_points(
+            collection_name=collection_name,
+            query=models.TextQuery(text=query_text),
+            using="text",
+            limit=top_k,
+            with_payload=True,
+        )
+    finally:
+        await client.close()
+
+    results = []
+
+    for point in response.points:
+        payload = point.payload or {}
+
+        results.append({
+            "score": point.score,
+            "text": payload.get("text", ""),
+            "source": payload.get("source", ""),
+            "chunk_index": payload.get("chunk_index"),
+        })
+
+    return results

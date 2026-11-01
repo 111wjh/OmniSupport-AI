@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "case_id": "rag-001",
+  "sample_sha256": "f60925d6d4dde54387f2a184a38ff5342d3beb24fe4a3a391ff0622733703d90",
+  "judge_model": "qwen3.8-flash",
+  "generator_model": "qwen3.8-flash",
+  "metric": "faithfulness",
+  "score": 0.6666666666666666,
+  "evaluated_at": "2026-11-01T02:05:47.843682+00:00",
+  "duration_seconds": 11.925,
+  "judgments": [
+    {
+      "statement": "蓝牙无线耳机 Pro 自购买之日起享有一年（12个月）的有限保修服务。",
+      "reason": "Context explicitly states that the product enjoys a one-year limited warranty from the date of purchase. One year is equivalent to 12 months.",
+      "verdict": 1
+    },
+    {
+      "statement": "购买时间为十一个月且为正常使用出现质量问题的情况下，该产品仍在保修期内。",
+      "reason": "The context states the warranty lasts for one year from the date of purchase and covers non-human quality issues under normal use. Eleven months is within the one-year period, so it is still under warranty.",
+      "verdict": 1
+    },
+    {
+      "statement": "蓝牙无线耳机 Pro 的保修范围涵盖正常使用情况下的非人为质量问题。",
+      "reason": "The context explicitly states: 'Warranty scope includes non-human quality problems appearing under normal usage conditions.'",
+      "verdict": 1
+    },
+    {
+      "statement": "最终是否符合免费保修条件需由售后人员根据实际情况确认。",
+      "reason": "The context states: 'Whether it meets warranty conditions needs to be confirmed by after-sales personnel based on actual circumstances.'",
+      "verdict": 1
+    },
+    {
+      "statement": "用户应提供订单编号或商品型号并联系人工客服申请售后检测。",
+      "reason": "The context mentions providing an order number for returns ('申请时需要提供订单编号') and contacting after-sales for quality issues ('客户可以联系售后申请检测和处理'). However, it does not mention providing the 'product model' (商品型号) as a requirement, nor does it specify contacting 'human customer service' (人工客服) specifically, just 'after-sales'. The addition of 'or product model' makes this statement not directly inferable.",
+      "verdict": 0
+    },
+    {
+      "statement": "具体维修、换货或退款结果将以官方审核为准。",
+      "reason": "The context mentions that return eligibility depends on review results ('具体以审核结果为准') and warranty status depends on confirmation by after-sales personnel. It does not explicitly state that 'repair, exchange, or refund results' will be based on official review in those specific terms, although it implies a review process. More importantly, the context focuses on 'returns' and 'warranty confirmation', not explicitly listing 'repair/exchange/refund results' governed by a single 'official review' clause in the manner stated. The statement generalizes beyond the specific text provided which says 'whether it meets warranty conditions... confirmed by after-sales' and 'return... subject to review results'. While close, the specific phrasing 'repair, exchange or refund results' is not directly supported as a combined category with that specific outcome rule.",
+      "verdict": 0
+    }
+  ],
+  "versions": {
+    "ragas": "0.4.3",
+    "langchain-community": "0.4.1",
+    "openai": "1.109.1",
+    "instructor": "1.3.2"
+  }
+}

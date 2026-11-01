@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "collection": "omnisupport_rag_eval_873d5a6d5034",
+  "cases": [
+    {
+      "id": "rag-001",
+      "category": "保修政策",
+      "query": "耳机买了十一个月，正常使用出现质量问题，还在保修期内吗？",
+      "reference":"该产品自购买之日起享有一年有限保修，购买十一个月仍在保修期限内。正常使用情况下出现的非人为质量问题属于保修范围，但是否符合具体保修条件，需要售后人员根据实际情况确认。",
+      "answerable": true,
+      "relevant_chunks": [
+        {
+          "source": "knowledge/after_sales_policy.md",
+          "chunk_index": 0,
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rag-002",
+      "category": "配对排查",
+      "query": "从电脑删除耳机的配对记录，是不是就把耳机恢复出厂设置了？",
+      "reference": "不是。删除电脑上的耳机配对记录，只是删除当前主机保存的配对关系，之后需要重新配对，不等于恢复耳机出厂设置。当前资料没有提供耳机恢复出厂设置的方法，不能编造按键或触摸组合。",
+      "answerable": true,
+      "relevant_chunks": [
+        {
+          "source": "knowledge/troubleshooting/earbuds_pro_pairing.md",
+          "chunk_index": 2,
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rag-003",
+      "category": "退款申请",
+      "query": "这个订单已经有一笔待审核退款申请，我再申请一次会怎样？",
+      "reference": "同一订单已经存在待审核的有效退款申请时，系统会拒绝再次创建有效申请。重复申请被拒绝不会使原申请失效，也不表示退款已经执行。应查询已有申请的审核状态或退款执行结果。",
+      "answerable": true,
+      "relevant_chunks": [
+        {
+          "source": "knowledge/policies/refund_request_and_execution.md",
+          "chunk_index": 2,
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rag-004",
+      "category": "人工工单",
+      "query": "工单关闭以后还能留言吗，之前客服回复的内容会被删除吗？",
+      "reference": "工单关闭后，客户和处理员工都不能继续追加回复。已有的问题说明和沟通记录仍可查询，关闭工单不会删除此前的记录。",
+      "answerable": true,
+      "relevant_chunks": [
+        {
+          "source": "knowledge/service/ticket_lifecycle.md",
+          "chunk_index": 4,
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rag-005",
+      "category": "充电排查",
+      "query": "我能照着其他品牌耳机的指示灯颜色，判断这款耳机是否充满电吗？",
+      "reference": "不能套用其他品牌耳机的指示灯颜色来判断这款耳机是否充满电。当前资料没有定义该型号的灯色含义，应查询经过确认的本型号说明，无法根据现有资料确定具体灯色对应的充电状态。",
+      "answerable": true,
+      "relevant_chunks": [
+        {
+          "source": "knowledge/troubleshooting/earbuds_pro_charging.md",
+          "chunk_index": 4,
+          "grade": 2
+        }
+      ]
+    }
+  ]
+}
