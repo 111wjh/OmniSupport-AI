@@ -31,6 +31,20 @@ async def answer_with_knowledge(
     )
 
 
+    return await generate_answer_from_knowledge(
+        question=question,
+        knowledge=knowledge,
+        image_observation=image_observation,
+    )
+
+
+async def generate_answer_from_knowledge(
+    question: str,
+    knowledge: list[dict],
+    image_observation: str | None = None,
+) -> str:
+    """根据指定的知识片段生成回答，不执行检索。"""
+
     if not knowledge:
         return "知识库中暂时没有找到相关信息，建议咨询人工客服。"
 

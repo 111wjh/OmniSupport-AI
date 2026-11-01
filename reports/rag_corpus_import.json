@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "completed_at": "2026-10-31T12:55:30.496082+00:00",
+  "embedding_model": "qwen3.7-text-embedding-flash",
+  "vector_size": 1024,
+  "chunker": "markdown_h2_v1",
+  "documents": [
+    {
+      "source": "knowledge/after_sales_policy.md",
+      "content_sha256": "0beb77a52d4882a3f14984156d3e627965404e90f1af88dd6a35855c879d5154",
+      "chunks": 5
+    },
+    {
+      "source": "knowledge/policies/refund_request_and_execution.md",
+      "content_sha256": "a181b4a368cb2b9313f2c509c8a81c1c1b63085e2da25342155bc051c035194d",
+      "chunks": 6
+    },
+    {
+      "source": "knowledge/policies/shipping_exceptions.md",
+      "content_sha256": "fcae937da2ef1791c4958735a6d186b889bd0cf68775fab4b321cf9c3b66dd72",
+      "chunks": 6
+    },
+    {
+      "source": "knowledge/products/earbuds_pro_usage.md",
+      "content_sha256": "8ed788c68e19bcdef9cc60e4403529adf6c2e7d951f12875c342ae45bc60213f",
+      "chunks": 6
+    },
+    {
+      "source": "knowledge/service/ticket_lifecycle.md",
+      "content_sha256": "c108790efe0cfab6cb02a4057694ddae01e1b606012cbfb98265a51a5aa21242",
+      "chunks": 6
+    },
+    {
+      "source": "knowledge/troubleshooting/earbuds_pro_charging.md",
+      "content_sha256": "a846bc7e3654e89d42b174f863a843a9f82256bd822b46d4330e6ec3717d4322",
+      "chunks": 6
+    },
+    {
+      "source": "knowledge/troubleshooting/earbuds_pro_cross_device.md",
+      "content_sha256": "52a155d6c6cd03bbadfc61f6abfd2b43337f7daf9820fb1c842588e6e1f82bb0",
+      "chunks": 6
+    },
+    {
+      "source": "knowledge/troubleshooting/earbuds_pro_microphone.md",
+      "content_sha256": "6a2f85a08426f67d984df28c2db6e18b00e99d752b78fa0f6e1fc857c34e64d8",
+      "chunks": 6
+    },
+    {
+      "source": "knowledge/troubleshooting/earbuds_pro_pairing.md",
+      "content_sha256": "d9abd69110c4e79d5a6904f9651944d2a865e1d2a22e728dbce7fc1136ff0724",
+      "chunks": 6
+    },
+    {
+      "source": "knowledge/troubleshooting/earbuds_pro_playback.md",
+      "content_sha256": "8d61e23dda6d8bf3c29288fc7e1fb4c266a8ee3f332d35639da4af2780dce217",
+      "chunks": 6
+    }
+  ],
+  "corpus_sha256": "873d5a6d5034b6dd2070140d9b1b22e89be206a1cb3fbb596334bfb3bcf143e3",
+  "document_count": 10,
+  "chunk_count": 59,
+  "collection": "omnisupport_rag_eval_873d5a6d5034",
+  "actual_point_count": 59,
+  "reused_existing_vectors": true,
+  "verification": "exact_point_ids_and_payloads",
+  "corpus_kind": "synthetic_demo_enterprise_knowledge"
+}

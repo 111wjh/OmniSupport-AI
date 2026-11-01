@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "case_id": "rag-001",
+  "sample_sha256": "f60925d6d4dde54387f2a184a38ff5342d3beb24fe4a3a391ff0622733703d90",
+  "judge_model": "qwen3.8-flash",
+  "generator_model": "qwen3.8-flash",
+  "metrics": {
+    "faithfulness": 0.375,
+    "context_recall": 1.0
+  },
+  "evaluated_at": "2026-11-01T02:22:01.488641+00:00",
+  "duration_seconds": 22.665,
+  "judgments": [
+    {
+      "statement": "蓝牙无线耳机 Pro 的售后服务政策规定该产品自购买之日起享有一年（12个月）有限保修服务。",
+      "reason": "Context explicitly states: 'Bluetooth Wireless Earphones Pro enjoys a one-year limited warranty service from the date of purchase.' One year is equivalent to 12 months.",
+      "verdict": 1
+    },
+    {
+      "statement": "用户购买的蓝牙无线耳机 Pro 使用时间为十一个月。",
+      "reason": "The context provides general policy information and usage instructions, but does not contain specific data about any individual user's purchase or usage duration. This statement introduces new information not present in the context.",
+      "verdict": 0
+    },
+    {
+      "statement": "蓝牙无线耳机 Pro 在正常使用情况下出现质量问题。",
+      "reason": "Similar to the previous statement, this describes a specific event for a specific user which is not mentioned in the general policy document provided in the context.",
+      "verdict": 0
+    },
+    {
+      "statement": "从时间上看，使用十一个月的蓝牙无线耳机 Pro 仍在保修期内。",
+      "reason": "While logically true based on the 1-year warranty rule, the premise that the device has been used for 11 months is not supported by the context. The context does not establish the current time relative to a purchase date for any specific unit.",
+      "verdict": 0
+    },
+    {
+      "statement": "蓝牙无线耳机 Pro 的保修范围涵盖正常使用情况下的非人为质量问题。",
+      "reason": "Context explicitly states: 'Warranty scope includes non-human quality problems appearing under normal use conditions.'",
+      "verdict": 1
+    },
+    {
+      "statement": "蓝牙无线耳机 Pro 最终是否符合免费保修条件需由售后人员根据实际情况确认。",
+      "reason": "Context explicitly states: 'Whether it meets warranty conditions needs to be confirmed by after-sales personnel according to the actual situation.'",
+      "verdict": 1
+    },
+    {
+      "statement": "建议用户提供订单编号或商品型号并联系人工客服申请售后检测。",
+      "reason": "The context mentions providing an order number for returns ('Application requires providing order number') and contacting after-sales for quality issues ('Customers can contact after-sales to apply for detection'). However, it does not explicitly mention providing 'product model' (商品型号) nor does it specify contacting 'human customer service' (人工客服) as opposed to automated systems or other channels. The instruction is partially inferred but contains specific details not strictly in the text.",
+      "verdict": 0
+    },
+    {
+      "statement": "蓝牙无线耳机 Pro 的具体维修、换货或退款结果将以官方审核为准。",
+      "reason": "The context states regarding returns: 'Specifically subject to audit results' (具体以审核结果为准). It also states regarding warranty: 'confirmed by after-sales personnel'. While 'audit results' implies official review, the specific combination of 'repair, exchange, or refund results' being determined by 'official audit' is a slight extrapolation. However, looking closely at the return policy: 'When goods have damage affecting secondary sales... may not be able to process return, specifically subject to audit results.' And for quality issues: 'contact after-sales to apply for detection and handling.' The statement generalizes 'audit results' to cover repair/exchange/refund outcomes. Given the strict faithfulness requirement, the text says 'subject to audit results' for returns and 'confirmed by after-sales' for warranty. It doesn't explicitly state that *all* outcomes (repair/exchange/refund) are solely defined by 'official audit' in those exact words, though it is highly implied. Let's look closer. The text says 'specifically subject to audit results' in the context of returns. It does not explicitly say 'repair results will be subject to official audit'. Therefore, this cannot be directly inferred word-for-word or logic-for-logic without assumption.",
+      "verdict": 0
+    }
+  ],
+  "versions": {
+    "ragas": "0.4.3",
+    "langchain-community": "0.4.1",
+    "openai": "1.109.1",
+    "instructor": "1.3.2"
+  }
+}

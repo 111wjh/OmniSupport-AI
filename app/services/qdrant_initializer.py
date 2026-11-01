@@ -8,7 +8,9 @@ COLLECTION_NAME = "omnisupport_knowledge"
 VECTOR_SIZE = 1024
 
 
-async def init_qdrant_collection() -> None:
+async def init_qdrant_collection(
+    collection_name: str = COLLECTION_NAME,
+) -> None:
     """初始化 Qdrant 集合和 BM25 全文索引。"""
 
     settings = get_settings()
@@ -21,25 +23,25 @@ async def init_qdrant_collection() -> None:
     try:
         # 1. 检查 Collection 是否存在
         exists = await client.collection_exists(
-            collection_name=COLLECTION_NAME,
+            collection_name=collection_name,
         )
 
         # 2. 不存在时，创建稠密向量集合
         if not exists:
             await client.create_collection(
-                collection_name=COLLECTION_NAME,
+                collection_name=collection_name,
                 vectors_config=models.VectorParams(
                     size=VECTOR_SIZE,
                     distance=models.Distance.COSINE,
                 ),
             )
-            print(f"Collection 创建成功：{COLLECTION_NAME}")
+            print(f"Collection 创建成功：{collection_name}")
         else:
-            print(f"Collection 已存在：{COLLECTION_NAME}")
+            print(f"Collection 已存在：{collection_name}")
 
         # 3. 检查 text 字段是否已有索引
         info = await client.get_collection(
-            collection_name=COLLECTION_NAME,
+            collection_name=collection_name,
         )
         # 检查现有 Collection 的稠密向量配置
         vector_config = info.config.params.vectors
@@ -84,7 +86,7 @@ async def init_qdrant_collection() -> None:
         else:
             # 4. 为知识正文创建 BM25 全文索引
             await client.create_payload_index(
-                collection_name=COLLECTION_NAME,
+                collection_name=collection_name,
                 field_name="text",
                 field_schema=models.TextIndexParams(
                     type=models.TextIndexType.TEXT,

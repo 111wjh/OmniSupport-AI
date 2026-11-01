@@ -8,6 +8,8 @@ async def retrieve_relevant_knowledge(
     question: str,
     recall_k: int = 5,
     top_n: int = 3,
+    *,
+    collection_name: str = "omnisupport_knowledge",
 ) -> list[dict]:
     """通过混合检索、RRF 融合和 Rerank 获取相关企业知识。"""
 
@@ -24,6 +26,7 @@ async def retrieve_relevant_knowledge(
         query_vector=query_vector,
         recall_k=recall_k,
         top_k=recall_k,
+        collection_name=collection_name,
     )
 
     if not candidates:

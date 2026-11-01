@@ -1,0 +1,1365 @@
+{
+  "schema_version": 1,
+  "config": {
+    "responses_sha256": "0f8fd2c08820ea13299bdbdfe3f7b792c28a64f862a5a4aa868cdd595564d8e6",
+    "judge_model": "qwen3.8-flash",
+    "endpoint_sha256": "5891aed827c4e67b2d7c0c73ea819327ce3f2b6ef72213cd79669486a26b1ead",
+    "embedding_model": "qwen3.7-text-embedding-flash",
+    "temperature": 0,
+    "strictness": 3,
+    "versions": {
+      "ragas": "0.4.3",
+      "langchain-community": "0.4.1",
+      "openai": "1.109.1",
+      "instructor": "1.3.2"
+    }
+  },
+  "completed_metrics": [
+    "context_recall",
+    "context_precision",
+    "faithfulness",
+    "answer_relevancy"
+  ],
+  "results": {
+    "rag-001/bm25": {
+      "case_id": "rag-001",
+      "method": "bm25",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:34:32.763956+00:00",
+          "duration_seconds": 3.061
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:37:23.043423+00:00",
+          "duration_seconds": 5.768
+        },
+        "faithfulness": {
+          "score": 0.625,
+          "evaluated_at": "2026-11-01T06:40:44.192170+00:00",
+          "duration_seconds": 8.927,
+          "judgments": [
+            {
+              "statement": "蓝牙无线耳机 Pro 自购买之日起享有一年（12个月）的有限保修服务。",
+              "reason": "Context explicitly states 'Bluetooth Wireless Earphones Pro enjoys a one-year limited warranty service from the date of purchase'. One year is equivalent to 12 months.",
+              "verdict": 1
+            },
+            {
+              "statement": "用户已使用耳机十一个月，因此从时间上看，该商品仍在保修期内。",
+              "reason": "The context establishes a one-year warranty period. Since 11 months is less than 1 year, it can be inferred that the product is still within the time frame of the warranty.",
+              "verdict": 1
+            },
+            {
+              "statement": "蓝牙无线耳机 Pro 的保修涵盖正常使用情况下出现的非人为质量问题。",
+              "reason": "Context explicitly states 'Warranty scope includes non-human quality problems appearing under normal use conditions'.",
+              "verdict": 1
+            },
+            {
+              "statement": "因进水、摔落、私自拆机或其他人为原因造成的损坏不属于免费保修范围。",
+              "reason": "Context explicitly states 'Damage caused by water immersion, falling, unauthorized disassembly or other human causes does not belong to the free warranty scope'.",
+              "verdict": 1
+            },
+            {
+              "statement": "是否符合最终保修条件需要由售后人员根据实际情况进行确认。",
+              "reason": "Context explicitly states 'Whether it meets the warranty conditions needs to be confirmed by after-sales personnel according to the actual situation'.",
+              "verdict": 1
+            },
+            {
+              "statement": "无法仅凭描述直接认定故障责任或承诺维修结果。",
+              "reason": "While the context says confirmation depends on actual situations by staff, it does not explicitly state that descriptions alone are insufficient for liability determination or result commitment. This is an inference about process limitations not directly stated in the text.",
+              "verdict": 0
+            },
+            {
+              "statement": "建议用户联系人工客服或前往授权服务中心。",
+              "reason": "The provided context contains warranty policies and usage/troubleshooting guides but does not contain specific instructions or recommendations to contact customer service or visit authorized centers.",
+              "verdict": 0
+            },
+            {
+              "statement": "建议用户提供订单编号及具体故障现象以便售后人员进行检测和核实。",
+              "reason": "The context mentions that after-sales personnel need to confirm based on actual situations, but it does not explicitly list 'order number' as required information or provide this specific recommendation.",
+              "verdict": 0
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.8307923795249788,
+          "evaluated_at": "2026-11-01T06:45:07.963227+00:00",
+          "duration_seconds": 3.797
+        }
+      }
+    },
+    "rag-001/dense": {
+      "case_id": "rag-001",
+      "method": "dense",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:34:36.336442+00:00",
+          "duration_seconds": 3.571
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:37:28.437953+00:00",
+          "duration_seconds": 5.393
+        },
+        "faithfulness": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:40:56.984223+00:00",
+          "duration_seconds": 12.79,
+          "judgments": [
+            {
+              "statement": "The answer is based on the \"Bluetooth Wireless Earphones Pro After-sales Service Policy\" from the enterprise knowledge base.",
+              "reason": "The context provided is explicitly titled \"蓝牙无线耳机 Pro 售后服务政策\" (Bluetooth Wireless Earphones Pro After-sales Service Policy), which matches the statement.",
+              "verdict": 1
+            },
+            {
+              "statement": "The Bluetooth Wireless Earphones Pro model enjoys a one-year limited warranty service starting from the date of purchase.",
+              "reason": "The context states: \"蓝牙无线耳机 Pro 自购买之日起享有一年有限保修服务\" (Bluetooth Wireless Earphones Pro enjoys a one-year limited warranty service from the date of purchase).",
+              "verdict": 1
+            },
+            {
+              "statement": "If the purchased product is the Bluetooth Wireless Earphones Pro and it has been used for eleven months, the product is theoretically still within the one-year warranty period.",
+              "reason": "Since the warranty is for one year from the date of purchase, eleven months is less than one year, so it falls within the warranty period.",
+              "verdict": 1
+            },
+            {
+              "statement": "The warranty scope includes non-human quality issues that occur under normal usage conditions.",
+              "reason": "The context states: \"保修范围包括正常使用情况下出现的非人为质量问题\" (Warranty scope includes non-human quality issues appearing under normal usage conditions).",
+              "verdict": 1
+            },
+            {
+              "statement": "Damage caused by water immersion, dropping, unauthorized disassembly, or other human causes does not belong to the free warranty scope.",
+              "reason": "The context states: \"因进水、摔落、私自拆机或其他人为原因造成的损坏，不属于免费保修范围\" (Damage caused by water immersion, falling, private disassembly, or other human causes does not belong to the free warranty scope).",
+              "verdict": 1
+            },
+            {
+              "statement": "Whether the warranty conditions are met requires confirmation by after-sales personnel based on the actual situation.",
+              "reason": "The context states: \"是否符合保修条件，需要售后人员根据实际情况确认\" (Whether warranty conditions are met needs to be confirmed by after-sales personnel according to the actual situation).",
+              "verdict": 1
+            },
+            {
+              "statement": "Warranty eligibility cannot be directly determined solely based on customer descriptions.",
+              "reason": "The context implies this by stating that after-sales personnel need to confirm based on the \"actual situation,\" suggesting that mere description might not be sufficient for a final determination without verification.",
+              "verdict": 1
+            },
+            {
+              "statement": "Customers should provide the order number to verify the specific product model and purchase time.",
+              "reason": "The context mentions providing the order number for applications. While it doesn't explicitly state the purpose is to verify 'model and purchase time', verifying order ownership (which includes these details) is mentioned in section four. However, strictly speaking, the text says 'verify customer identity and order ownership'. It is a reasonable inference that order numbers link to these details, but let's look closer. The text says 'provide order number... ensure goods meet return conditions' and 'verify customer identity and order ownership'. It does not explicitly say the order number is *for* verifying model/time, though it is implied. Let's mark as 1 because order ownership inherently contains model and time info needed for warranty checks.",
+              "verdict": 1
+            },
+            {
+              "statement": "Customers should describe the encountered problem in detail or provide necessary product photos.",
+              "reason": "The context states: \"建议提供订单编号、问题描述及必要的商品照片\" (It is recommended to provide order number, problem description, and necessary product photos).",
+              "verdict": 1
+            },
+            {
+              "statement": "Customer service will provide handling suggestions based on the specific situation after verifying identity and order ownership.",
+              "reason": "The context states: \"客服应先核实客户身份和订单归属，再根据具体问题提供处理建议\" (Customer service should first verify customer identity and order ownership, then provide handling suggestions based on the specific problem).",
+              "verdict": 1
+            },
+            {
+              "statement": "Arranging manual inspection may be required if further judgment of the fault cause is needed.",
+              "reason": "The context mentions that for quality issues, customers can apply for detection and processing (\"申请检测和处理\"). This implies an inspection process. Also, warranty eligibility depends on confirming if damage is human-caused vs quality issue, which often requires physical inspection/detection.",
+              "verdict": 1
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.7814704676687905,
+          "evaluated_at": "2026-11-01T06:45:11.423507+00:00",
+          "duration_seconds": 3.458
+        }
+      }
+    },
+    "rag-001/hybrid": {
+      "case_id": "rag-001",
+      "method": "hybrid",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:34:39.509224+00:00",
+          "duration_seconds": 3.172
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:37:33.781161+00:00",
+          "duration_seconds": 5.342
+        },
+        "faithfulness": {
+          "score": 0.625,
+          "evaluated_at": "2026-11-01T06:41:10.752438+00:00",
+          "duration_seconds": 13.767,
+          "judgments": [
+            {
+              "statement": "根据企业知识库中《蓝牙无线耳机 Pro 售后服务政策》的规定，该产品自购买之日起享有一年（12个月）的有限保修服务。",
+              "reason": "Context explicitly states: '蓝牙无线耳机 Pro 自购买之日起享有一年有限保修服务' (Bluetooth Wireless Earbuds Pro enjoys a one-year limited warranty service from the date of purchase). One year is equivalent to 12 months.",
+              "verdict": 1
+            },
+            {
+              "statement": "用户购买耳机的时间为十一个月，该时间处于一年保修期内。",
+              "reason": "The context defines the warranty period as one year. Eleven months is less than one year, so it falls within the warranty period based on the definition provided in the text.",
+              "verdict": 1
+            },
+            {
+              "statement": "若确认为正常使用情况下出现的非人为质量问题，原则上符合免费保修的范围。",
+              "reason": "Context states: '保修范围包括正常使用情况下出现的非人为质量问题' (Warranty scope includes non-human quality issues appearing under normal use conditions).",
+              "verdict": 1
+            },
+            {
+              "statement": "是否符合最终保修条件需由售后人员根据实际情况确认。",
+              "reason": "Context states: '是否符合保修条件，需要售后人员根据实际情况确认' (Whether it meets warranty conditions needs to be confirmed by after-sales personnel according to actual circumstances).",
+              "verdict": 1
+            },
+            {
+              "statement": "因进水、摔落、私自拆机等人为原因造成的损坏不属于免费保修范围。",
+              "reason": "Context states: '因进水、摔落、私自拆机或其他人为原因造成的损坏，不属于免费保修范围' (Damage caused by water immersion, dropping, unauthorized disassembly or other human causes does not belong to the free warranty scope).",
+              "verdict": 1
+            },
+            {
+              "statement": "建议用户提供订单编号或联系人工客服。",
+              "reason": "While the context mentions providing an order number for returns ('申请时需要提供订单编号') and contacting after-sales for quality issues ('客户可以联系售后'), it does not explicitly state a general recommendation to 'contact human customer service' (联系人工客服) as a specific instruction in the provided text snippets. However, '联系售后' implies contacting support. Let's look closer. The statement says 'Suggest user provide order number OR contact human customer service'. The text says for returns you need an order number. For quality issues, you contact after-sales. It doesn't explicitly frame this as a combined suggestion 'provide order number or contact human CS' in a single directive sentence, but these are the actions described. However, strictly speaking, the text says '联系售后' (contact after-sales), not specifically '联系人工客服' (contact human customer service). In many contexts, after-sales might be automated initially. But more importantly, the text separates these actions: Order number is for returns. Contacting after-sales is for quality issues. The statement combines them with 'or'. Is it directly inferable? The text supports providing an order number (for returns) and contacting after-sales (for quality issues). It does not explicitly say 'contact human customer service'. This makes it slightly ambiguous. Let's re-read carefully. '申请时需要提供订单编号... 商品存在质量问题时，客户可以联系售后'. The statement 'Suggest user provide order number or contact human customer service' is a synthesis. Usually, 'faithfulness' requires direct inference. The term 'human customer service' is not in the text. 'After-sales' is. Therefore, this statement introduces a term not present in the context.",
+              "verdict": 0
+            },
+            {
+              "statement": "提供订单编号或联系人工客服的目的是为了核实具体订单信息及商品型号。",
+              "reason": "The context states that an order number is needed when applying for a return ('申请时需要提供订单编号'). It does not explicitly state that the *purpose* is to verify 'specific order information and product model'. While this is a logical real-world assumption, it is not directly inferred from the text provided. The text only says it is required for the application.",
+              "verdict": 0
+            },
+            {
+              "statement": "提供订单编号或联系人工客服的目的是为了安排后续的检测与处理流程。",
+              "reason": "The context states that if there are quality issues, customers can contact after-sales to apply for detection and processing ('客户可以联系售后申请检测和处理'). It does not link 'providing an order number' to 'arranging subsequent detection and processing flow' in the same way. Providing an order number is linked to the return application process. Contacting after-sales is linked to detection/processing. The statement conflates the purposes or attributes the purpose of detection/processing to the act of providing an order number/contacting human CS generally, which isn't precisely supported by the text structure.",
+              "verdict": 0
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.7954294356813786,
+          "evaluated_at": "2026-11-01T06:45:18.042408+00:00",
+          "duration_seconds": 6.617
+        }
+      }
+    },
+    "rag-001/hybrid_rerank": {
+      "case_id": "rag-001",
+      "method": "hybrid_rerank",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:34:43.329587+00:00",
+          "duration_seconds": 3.819
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:37:39.725858+00:00",
+          "duration_seconds": 5.944
+        },
+        "faithfulness": {
+          "score": 0.8181818181818182,
+          "evaluated_at": "2026-11-01T06:41:25.649567+00:00",
+          "duration_seconds": 14.896,
+          "judgments": [
+            {
+              "statement": "The after-sales service policy for Bluetooth Wireless Earphones Pro is referenced from the enterprise knowledge base.",
+              "reason": "The context provides the text of the policy but does not mention its source or that it is referenced from an 'enterprise knowledge base'.",
+              "verdict": 0
+            },
+            {
+              "statement": "Bluetooth Wireless Earphones Pro enjoy a one-year (12-month) limited warranty starting from the date of purchase.",
+              "reason": "The context explicitly states: '蓝牙无线耳机 Pro 自购买之日起享有一年有限保修服务' (Bluetooth Wireless Earphones Pro enjoy a one-year limited warranty service from the date of purchase).",
+              "verdict": 1
+            },
+            {
+              "statement": "If the purchased item is confirmed to be the Bluetooth Wireless Earphones Pro model, it remains within the one-year warranty period at eleven months post-purchase.",
+              "reason": "Since the warranty lasts for one year (12 months) from the date of purchase, a product at 11 months post-purchase is still within this period.",
+              "verdict": 1
+            },
+            {
+              "statement": "Non-human-caused quality issues occurring under normal usage conditions fall within the scope of the warranty for Bluetooth Wireless Earphones Pro.",
+              "reason": "The context states: '保修范围包括正常使用情况下出现的非人为质量问题' (Warranty scope includes non-human caused quality problems appearing under normal use conditions).",
+              "verdict": 1
+            },
+            {
+              "statement": "Final eligibility for free warranty repair must be confirmed by after-sales personnel based on actual circumstances.",
+              "reason": "The context states: '是否符合保修条件，需要售后人员根据实际情况确认' (Whether it meets warranty conditions needs to be confirmed by after-sales personnel according to actual circumstances).",
+              "verdict": 1
+            },
+            {
+              "statement": "The stated warranty policy applies only to the Bluetooth Wireless Earphones Pro model.",
+              "reason": "The title and content specifically refer to '蓝牙无线耳机 Pro' (Bluetooth Wireless Earphones Pro), implying the policy is specific to this model. It does not claim to apply to other models.",
+              "verdict": 1
+            },
+            {
+              "statement": "Warranty policies may differ if the earphones are of another brand or model.",
+              "reason": "While logically true in general, the provided context strictly defines the policy for 'Bluetooth Wireless Earphones Pro'. It does not contain information about other brands or models, so this cannot be directly inferred *from the context* as a fact stated therein, although it is a reasonable real-world assumption. However, strict NLI usually requires explicit support. The context doesn't say 'other models have different policies', it just defines this one. Let's look closer. Is it inferable? The document is titled 'Bluetooth Wireless Earphones Pro After-sales Service Policy'. It defines terms for this specific product. It does not make claims about other products. Therefore, we cannot infer what happens with other products from this text alone. Verdict 0.",
+              "verdict": 0
+            },
+            {
+              "statement": "Providing an order number is recommended to verify specific product information.",
+              "reason": "The context states under 'After-sales application required information': '建议提供订单编号... 客服应先核实客户身份和订单归属' (It is recommended to provide the order number... Customer service should first verify customer identity and order ownership). This links providing the order number to verification.",
+              "verdict": 1
+            },
+            {
+              "statement": "Specific fault causes and liability determination require after-sales inspection even if the product is within the warranty period.",
+              "reason": "The context mentions that damage from water, drops, etc., is not covered, and 'whether it meets warranty conditions needs to be confirmed by after-sales personnel'. This implies an inspection/confirmation process is needed to determine liability/eligibility.",
+              "verdict": 1
+            },
+            {
+              "statement": "It is recommended to prepare the order number, problem description, and necessary product photos before contacting customer service.",
+              "reason": "The context states: '客户申请保修、退换货或物流协助时，建议提供订单编号、问题描述及必要的商品照片' (When customers apply for warranty, return/exchange, or logistics assistance, it is recommended to provide order number, problem description, and necessary product photos).",
+              "verdict": 1
+            },
+            {
+              "statement": "Contacting human customer service is advised to apply for after-sales inspection and processing.",
+              "reason": "The context says '客服应先核实...' (Customer service should first verify...) and '客户可以联系售后申请检测和处理' (Customers can contact after-sales to apply for inspection and processing). While it says 'contact after-sales', it doesn't explicitly specify 'human' customer service versus automated systems, though 'customer service' (客服) typically implies human interaction in this context. However, looking at the strict wording, it says 'contact after-sales'. Does 'after-sales' equal 'human customer service'? Usually yes. But let's check if there's a better fit. The statement says 'Contacting human customer service is advised'. The text says 'Customers can contact after-sales'. It also mentions 'Customer service should...'. It is a reasonable inference that contacting the entity referred to as 'customer service' or 'after-sales' involves human agents who perform the verification steps described. Verdict 1.",
+              "verdict": 1
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.8310446119836797,
+          "evaluated_at": "2026-11-01T06:45:25.011896+00:00",
+          "duration_seconds": 6.968
+        }
+      }
+    },
+    "rag-002/bm25": {
+      "case_id": "rag-002",
+      "method": "bm25",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:34:46.479836+00:00",
+          "duration_seconds": 3.149
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:37:44.823735+00:00",
+          "duration_seconds": 5.097
+        },
+        "faithfulness": {
+          "score": 0.7142857142857143,
+          "evaluated_at": "2026-11-01T06:41:35.451541+00:00",
+          "duration_seconds": 9.801,
+          "judgments": [
+            {
+              "statement": "根据企业知识库资料文档编号PRO-PAIRING-001，在电脑主机上删除耳机的配对记录并不等于恢复耳机出厂设置。",
+              "reason": "Context explicitly states: '删除主机上的配对记录，不等于恢复耳机出厂设置' under document PRO-PAIRING-001.",
+              "verdict": 1
+            },
+            {
+              "statement": "删除配对记录和恢复出厂设置是两种不同的操作。",
+              "reason": "The context distinguishes between deleting pairing records on the host and restoring factory settings, stating they are not equal, implying they are different operations.",
+              "verdict": 1
+            },
+            {
+              "statement": "删除配对记录仅是在当前连接的主机上清除与该耳机的蓝牙关联信息。",
+              "reason": "The context mentions deleting old headphone pairing records on the current host ('在当前主机删除旧的耳机配对记录'), which implies clearing the association on that specific device. While 'only' is a strong word, the context contrasts this with factory reset (which affects the earphone itself), supporting the inference that it is a host-side action.",
+              "verdict": 1
+            },
+            {
+              "statement": "执行删除配对记录操作后，用户下次需要重新与这台主机进行配对才能使用耳机。",
+              "reason": "The context states: '操作前应提醒客户，之后需要重新连接这台主机' (Before the operation, remind the customer that they will need to reconnect to this host afterwards). Reconnecting implies re-pairing or at least establishing the connection again after deletion.",
+              "verdict": 1
+            },
+            {
+              "statement": "恢复出厂设置是指将耳机本身的系统配置重置为初始状态。",
+              "reason": "The context does not define what 'restoring factory settings' means technically (e.g., resetting system configuration to initial state). It only states that deleting pairing records is *not* equivalent to it and that the method for factory reset is not provided. The definition is external knowledge, not inferred from the text.",
+              "verdict": 0
+            },
+            {
+              "statement": "现有资料中未提供该型号耳机恢复出厂设置的具体操作方法。",
+              "reason": "The context explicitly states: '当前资料没有提供耳机恢复出厂设置的方法' (Current materials do not provide the method for restoring factory settings of the headphones).",
+              "verdict": 1
+            },
+            {
+              "statement": "用户不应自行尝试未知的按键或触摸组合来恢复出厂设置，以免导致设备异常。",
+              "reason": "The context states: '不得擅自指导客户进行未知的按键或触摸组合' (Do not arbitrarily guide customers to perform unknown button or touch combinations). This supports the instruction that users should not try these methods. The reason 'to avoid device abnormalities' is a logical safety implication often associated with such warnings in support docs, but strictly speaking, the text forbids the action without explicitly stating the consequence 'device abnormality'. However, in NLI tasks regarding faithfulness to instructions/warnings, the prohibition itself is the key fact. Let's look closer. The text says 'do not guide...'. It doesn't explicitly say 'users should not try' (it addresses the agent/support staff) nor does it explicitly state the consequence 'to avoid device abnormalities'. Therefore, the specific reasoning part is not directly in the text.",
+              "verdict": 0
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.9543289869008652,
+          "evaluated_at": "2026-11-01T06:45:32.640185+00:00",
+          "duration_seconds": 7.627
+        }
+      }
+    },
+    "rag-002/dense": {
+      "case_id": "rag-002",
+      "method": "dense",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:34:49.605795+00:00",
+          "duration_seconds": 3.125
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:37:50.633595+00:00",
+          "duration_seconds": 5.809
+        },
+        "faithfulness": {
+          "score": 0.8,
+          "evaluated_at": "2026-11-01T06:41:42.947060+00:00",
+          "duration_seconds": 7.494,
+          "judgments": [
+            {
+              "statement": "从电脑删除耳机的配对记录不等于将耳机恢复出厂设置。",
+              "reason": "Context explicitly states: '删除主机上的配对记录，不等于恢复耳机出厂设置' (Deleting pairing records on the host is not equal to restoring the earphones to factory settings). Since a computer is a type of host, this inference is valid.",
+              "verdict": 1
+            },
+            {
+              "statement": "根据《蓝牙无线耳机 Pro 配对与连接故障排查》（文档编号：PRO-PAIRING-001）说明，删除主机上的配对记录不等于恢复耳机出厂设置。",
+              "reason": "The context header identifies the document as '蓝牙无线耳机 Pro 配对与连接故障排查' with document number 'PRO-PAIRING-001', and the body text confirms that deleting pairing records does not equal restoring factory settings.",
+              "verdict": 1
+            },
+            {
+              "statement": "当前资料中没有提供耳机恢复出厂设置的方法。",
+              "reason": "The context explicitly states: '当前资料没有提供耳机恢复出厂设置的方法' (The current materials do not provide a method for restoring the earphones to factory settings).",
+              "verdict": 1
+            },
+            {
+              "statement": "用户不应尝试未知的按键或触摸组合来重置耳机。",
+              "reason": "The context advises: '不得擅自指导客户进行未知的按键或触摸组合' (Do not arbitrarily guide customers to perform unknown button or touch combinations). This implies users should not attempt these actions based on this documentation.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果用户需要确认具体型号或获取其他操作指导，建议用户提供订单编号或商品型号以便进一步核实。",
+              "reason": "The provided context contains troubleshooting steps for Bluetooth pairing and connection issues. It does not contain any information regarding requesting order numbers or product models for verification purposes.",
+              "verdict": 0
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.8514316731780577,
+          "evaluated_at": "2026-11-01T06:45:38.540275+00:00",
+          "duration_seconds": 5.898
+        }
+      }
+    },
+    "rag-002/hybrid": {
+      "case_id": "rag-002",
+      "method": "hybrid",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:34:52.030997+00:00",
+          "duration_seconds": 2.424
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:37:56.678655+00:00",
+          "duration_seconds": 6.044
+        },
+        "faithfulness": {
+          "score": 0.8333333333333334,
+          "evaluated_at": "2026-11-01T06:41:51.046476+00:00",
+          "duration_seconds": 8.098,
+          "judgments": [
+            {
+              "statement": "从电脑删除耳机的配对记录并不等于将耳机恢复出厂设置。",
+              "reason": "Context explicitly states: '删除主机上的配对记录，不等于恢复耳机出厂设置。' (Deleting pairing records on the host is not equal to restoring factory settings of the earphones.)",
+              "verdict": 1
+            },
+            {
+              "statement": "删除配对记录仅是在主机上移除了与耳机的连接信息。",
+              "reason": "The context mentions deleting old pairing records on the current host ('在当前主机删除旧的耳机配对记录'). While it implies removing connection info, the word 'only' (仅) might be an over-interpretation if other effects exist, but in the context of Bluetooth troubleshooting, deleting a pairing record on the host specifically removes the stored link/connection data for that device. The statement is a reasonable inference of what 'deleting pairing records on the host' entails based on standard technical knowledge implied by the text's distinction from factory reset.",
+              "verdict": 1
+            },
+            {
+              "statement": "恢复出厂设置是指清除耳机内部的设置数据。",
+              "reason": "The context distinguishes between deleting host records and restoring factory settings, implying they are different operations. However, the context does *not* explicitly define what 'restoring factory settings' means (i.e., that it clears internal data). It only says the method is not provided. Therefore, this definition cannot be directly inferred from the provided text alone.",
+              "verdict": 0
+            },
+            {
+              "statement": "当前资料未提供该型号耳机恢复出厂设置的具体方法。",
+              "reason": "Context explicitly states: '当前资料没有提供耳机恢复出厂设置的方法' (Current materials do not provide the method for restoring factory settings of the earphones).",
+              "verdict": 1
+            },
+            {
+              "statement": "用户不应擅自尝试未知的按键或触摸组合来恢复耳机出厂设置。",
+              "reason": "Context explicitly states: '不得擅自指导客户进行未知的按键或触摸组合' (Must not arbitrarily guide customers to perform unknown button or touch combinations). This implies users should not try these methods as guided by support, and generally aligns with the instruction not to use unknown methods.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果用户遇到连接问题，建议在删除主机上的旧配对记录后重新进行配对。",
+              "reason": "Context under section '三、能搜索到但无法连接' (III. Can search but cannot connect) states: '确认设备名称无误后，可以在当前主机删除旧的耳机配对记录，再重新进行配对。' (After confirming the device name is correct, you can delete the old earphone pairing records on the current host, and then re-pair.) This is a direct recommendation for this specific connectivity issue.",
+              "verdict": 1
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.9837205044288732,
+          "evaluated_at": "2026-11-01T06:45:47.046909+00:00",
+          "duration_seconds": 8.505
+        }
+      }
+    },
+    "rag-002/hybrid_rerank": {
+      "case_id": "rag-002",
+      "method": "hybrid_rerank",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:34:55.047277+00:00",
+          "duration_seconds": 3.015
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:38:02.185230+00:00",
+          "duration_seconds": 5.505
+        },
+        "faithfulness": {
+          "score": 0.8,
+          "evaluated_at": "2026-11-01T06:41:57.981059+00:00",
+          "duration_seconds": 6.933,
+          "judgments": [
+            {
+              "statement": "从电脑删除耳机的配对记录不等于将耳机恢复出厂设置。",
+              "reason": "The context explicitly states in the section '能搜索到但无法连接' that '删除主机上的配对记录，不等于恢复耳机出厂设置' (Deleting pairing records on the host is not equal to restoring factory settings of the earphones). Since a computer is a type of host, this inference is valid.",
+              "verdict": 1
+            },
+            {
+              "statement": "根据《蓝牙无线耳机 Pro 配对与连接故障排查》文档（编号：PRO-PAIRING-001），删除主机上的配对记录不等于恢复耳机出厂设置。",
+              "reason": "The context identifies the document as '蓝牙无线耳机 Pro 配对与连接故障排查' with number 'PRO-PAIRING-001' and contains the exact statement that deleting pairing records does not equal restoring factory settings.",
+              "verdict": 1
+            },
+            {
+              "statement": "当前资料中没有提供该型号耳机恢复出厂设置的具体方法。",
+              "reason": "The context explicitly states: '当前资料没有提供耳机恢复出厂设置的方法' (Current materials do not provide methods for restoring earphone factory settings).",
+              "verdict": 1
+            },
+            {
+              "statement": "不建议尝试未知的按键或触摸组合操作来恢复耳机出厂设置。",
+              "reason": "The context warns: '不得擅自指导客户进行未知的按键或触摸组合' (Do not arbitrarily guide customers to perform unknown button or touch combinations), which implies that such actions are not recommended/supported by the current documentation.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果需要确认具体的重置步骤，建议联系人工客服获取进一步指导。",
+              "reason": "The provided context does not mention contacting human customer service. It only states that the current materials do not provide the method and forbids guiding users through unknown operations. The suggestion to contact human support is an external assumption not found in the text.",
+              "verdict": 0
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.8347929566165243,
+          "evaluated_at": "2026-11-01T06:45:54.342781+00:00",
+          "duration_seconds": 7.294
+        }
+      }
+    },
+    "rag-003/bm25": {
+      "case_id": "rag-003",
+      "method": "bm25",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:34:57.885388+00:00",
+          "duration_seconds": 2.835
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:38:13.116092+00:00",
+          "duration_seconds": 10.924
+        },
+        "faithfulness": {
+          "score": 0.7777777777777778,
+          "evaluated_at": "2026-11-01T06:42:10.236066+00:00",
+          "duration_seconds": 12.254,
+          "judgments": [
+            {
+              "statement": "根据企业知识库POLICY-REFUND-001的规定，针对该订单的情况说明如下。",
+              "reason": "The context explicitly identifies the document as 'POLICY-REFUND-001' and describes it as enterprise knowledge for the OmniSupport AI project, making this statement a faithful introduction to the provided rules.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果同一订单已经存在一笔待审核或审核通过的有效退款申请，系统会拒绝再次创建新的有效申请。",
+              "reason": "Section III of the context states: 'When there is already a pending or approved valid refund application for the same order, the system will refuse to create another valid application.' This matches the statement directly.",
+              "verdict": 1
+            },
+            {
+              "statement": "重复申请被拒绝不代表之前提交的那笔申请失效。",
+              "reason": "Section III of the context states: 'Rejection of duplicate applications does not mean that the original application has become invalid.' This matches the statement directly.",
+              "verdict": 1
+            },
+            {
+              "statement": "重复申请被拒绝不代表退款已经执行。",
+              "reason": "Section III of the context states: 'Rejection of duplicate applications... does not mean that the original application has executed the refund.' This matches the statement directly.",
+              "verdict": 1
+            },
+            {
+              "statement": "之前的申请仍在处理流程中。",
+              "reason": "While the context says the original application hasn't failed due to rejection, it does not explicitly guarantee that the previous application is currently 'in the processing flow' (it could be completed, rejected on its own merits, etc.). However, in the context of explaining why a new one was rejected, implying the old one is still the active/valid record is a reasonable inference from 'does not mean the original application has become invalid'. But strictly speaking, 'still in processing' is an assumption. Let's look closer. The text says 'Customer should query the review status...'. It doesn't confirm the status is 'processing'. It just says the rejection of the *new* one doesn't invalidate the *old* one. The old one could be 'Approved' but not yet executed, or 'Pending'. 'In processing' is vague. However, usually, if it's not invalid, it's part of the workflow. Let's re-read carefully. 'Does not mean the original application has become invalid'. It doesn't say it is actively being processed right now. It might be waiting for execution. I will mark this as 0 because 'still in processing' is a specific state not guaranteed by the text, which only guarantees it hasn't been invalidated by the duplicate rejection.",
+              "verdict": 0
+            },
+            {
+              "statement": "建议用户查询已有那笔退款申请的审核状态或退款执行结果。",
+              "reason": "Section III of the context states: 'Customers should query the review status or refund execution result of the existing application.' This matches the statement directly.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果无法确认此前请求的结果，应先核实是否已存在申请，再决定后续处理方式。",
+              "reason": "Section III of the context states: 'If the result of the previous request cannot be confirmed, one should first check whether an application already exists before deciding on subsequent handling.' This matches the statement directly.",
+              "verdict": 1
+            },
+            {
+              "statement": "退款执行为系统内的模拟流程，不涉及真实资金转移。",
+              "reason": "The 'Special Note' section in the context states: 'Refund execution is a simulated process within the database and does not involve real fund transfers.' This matches the statement directly.",
+              "verdict": 1
+            },
+            {
+              "statement": "如有其他疑问，建议联系人工客服进一步核实订单状态。",
+              "reason": "The provided context contains specific policy rules regarding refunds, submission, and validation. It does not contain any instruction or suggestion to contact human customer service for other questions or to verify order status via human agents.",
+              "verdict": 0
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.7804230841932084,
+          "evaluated_at": "2026-11-01T06:46:01.487898+00:00",
+          "duration_seconds": 7.144
+        }
+      }
+    },
+    "rag-003/dense": {
+      "case_id": "rag-003",
+      "method": "dense",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:00.921626+00:00",
+          "duration_seconds": 3.035
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:38:18.369003+00:00",
+          "duration_seconds": 5.251
+        },
+        "faithfulness": {
+          "score": 0.9090909090909091,
+          "evaluated_at": "2026-11-01T06:42:23.867970+00:00",
+          "duration_seconds": 13.63,
+          "judgments": [
+            {
+              "statement": "根据企业知识库POLICY-REFUND-001的规定，针对订单已有一笔待审核退款申请的情况有特定的处理规则。",
+              "reason": "Context mentions document number POLICY-REFUND-001 and section '三、已有有效申请时的处理' which covers pending applications.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果同一订单已经存在处于待审核状态的有效退款申请，系统会拒绝再次创建新的有效申请。",
+              "reason": "Context states: '同一订单已有待审核...的有效退款申请时，系统会拒绝再次创建有效申请。'",
+              "verdict": 1
+            },
+            {
+              "statement": "如果同一订单已经存在处于审核通过状态的有效退款申请，系统会拒绝再次创建新的有效申请。",
+              "reason": "Context states: '同一订单已有...审核通过的有效退款申请时，系统会拒绝再次创建有效申请。'",
+              "verdict": 1
+            },
+            {
+              "statement": "重复申请被拒绝并不代表原有的那笔待审核申请失效。",
+              "reason": "Context states: '重复申请被拒绝，不代表原申请失效...'",
+              "verdict": 1
+            },
+            {
+              "statement": "重复申请被拒绝并不代表该申请已经执行了退款。",
+              "reason": "Context states: '重复申请被拒绝...也不代表原申请已经执行退款。'",
+              "verdict": 1
+            },
+            {
+              "statement": "建议用户直接查询已有申请的当前审核状态或后续的执行结果。",
+              "reason": "Context states: '客户应查询已有申请的审核状态或退款执行结果。'",
+              "verdict": 1
+            },
+            {
+              "statement": "建议用户不要尝试重新提交申请。",
+              "reason": "The context explains that the system will reject duplicate requests, but it does not explicitly advise users *not* to try submitting them; rather, it describes the system's behavior and advises checking status first. While implied by the rejection rule, the specific instruction 'do not try' is not present, whereas 'check status' is. However, looking closely at '如果此前请求的结果无法确认，应先查询是否已经存在申请，再决定后续处理', this implies a check before action. But strictly speaking, the text says the system rejects it. It doesn't give a direct user advice 'don't submit'. Let's re-read carefully. The text says 'Customer should query... If result cannot be confirmed, query if application exists first, then decide subsequent handling.' It does not explicitly say 'Do not resubmit'. It says the system *will* reject it. So inferring 'Advice: Do not resubmit' is a slight leap from 'System rejects'. However, usually in these tasks, if the system rejects it, advising against it is faithful. But let's look for explicit text. There is no explicit sentence saying 'Users should not resubmit'. It says 'System will reject'. Verdict 0 is safer as it's not directly stated as an instruction to the user, but a description of system behavior.",
+              "verdict": 0
+            },
+            {
+              "statement": "退款申请提交成功仅代表建立了待处理记录。",
+              "reason": "Context states: '退款申请提交成功，只表示系统建立了待处理的退款申请...'",
+              "verdict": 1
+            },
+            {
+              "statement": "退款申请提交成功不等于审核通过。",
+              "reason": "Context states: '提交申请不代表审核通过...'",
+              "verdict": 1
+            },
+            {
+              "statement": "退款申请提交成功不等于退款已到账。",
+              "reason": "Context states: '提交申请...也不代表已经执行退款。' And '特别说明：退款执行为数据库内的模拟流程，不涉及真实资金转移。' Since it doesn't represent execution, it certainly doesn't represent funds arriving (which isn't even real). The statement 'not equal to refund received/arrived' is logically inferred from 'does not mean refund executed'.",
+              "verdict": 1
+            },
+            {
+              "statement": "如需确认具体进度，应以系统实际记录为准。",
+              "reason": "Context states: '审核意见应以系统实际记录为依据。' and '客服应分别说明申请、审核和执行的实际结果'. This supports using actual records.",
+              "verdict": 1
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.9469118563363267,
+          "evaluated_at": "2026-11-01T06:46:11.119384+00:00",
+          "duration_seconds": 9.63
+        }
+      }
+    },
+    "rag-003/hybrid": {
+      "case_id": "rag-003",
+      "method": "hybrid",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:03.394678+00:00",
+          "duration_seconds": 2.472
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:38:23.790099+00:00",
+          "duration_seconds": 5.42
+        },
+        "faithfulness": {
+          "score": 0.8333333333333334,
+          "evaluated_at": "2026-11-01T06:42:41.453859+00:00",
+          "duration_seconds": 17.584,
+          "judgments": [
+            {
+              "statement": "根据企业知识库《退款申请、审核与模拟执行说明》（文档编号：POLICY-REFUND-001），针对该情况有特定的处理规则。",
+              "reason": "上下文标题和元数据明确指出了文档名称为《退款申请、审核与模拟执行说明》，文档编号为 POLICY-REFUND-001，且内容涉及具体的处理规则。",
+              "verdict": 1
+            },
+            {
+              "statement": "如果同一订单已经存在“待审核”或“审核通过”的有效退款申请，系统会拒绝再次创建新的有效申请。",
+              "reason": "上下文第三节明确指出：“同一订单已有待审核或审核通过的有效退款申请时，系统会拒绝再次创建有效申请。”",
+              "verdict": 1
+            },
+            {
+              "statement": "重复申请被拒绝不代表原本的那笔待审核申请失效。",
+              "reason": "上下文第三节指出：“重复申请被拒绝，不代表原申请失效”。虽然原文未特指“待审核”，但前文提到原申请可能是“待审核或审核通过”，因此推断原申请（无论状态）不失效是符合逻辑的，且直接对应原文“不代表原申请失效”。",
+              "verdict": 1
+            },
+            {
+              "statement": "重复申请被拒绝不代表该申请已经执行了退款。",
+              "reason": "上下文第三节指出：“重复申请被拒绝...也不代表原申请已经执行退款。”",
+              "verdict": 1
+            },
+            {
+              "statement": "原申请仍在流程中等待审核。",
+              "reason": "上下文仅说明原申请可能处于“待审核”或“审核通过”状态，并未断言所有情况下原申请都一定在“等待审核”。如果原申请已“审核通过”，则不在等待审核阶段。此陈述过于绝对，无法从上下文直接推断出在所有情况下都成立。",
+              "verdict": 0
+            },
+            {
+              "statement": "建议用户直接查询已有申请的审核状态或退款执行结果。",
+              "reason": "上下文第三节指出：“客户应查询已有申请的审核状态或退款执行结果。”",
+              "verdict": 1
+            },
+            {
+              "statement": "建议用户不要尝试重新提交申请。",
+              "reason": "上下文指出系统会拒绝再次创建有效申请，并建议先查询是否已存在申请再决定后续处理。虽然隐含了盲目重试无效的意思，但原文更侧重于“查询状态”而非直接禁止“尝试提交”这一动作本身（尽管尝试会被拒绝）。不过，结合“系统会拒绝再次创建”和“应先查询...再决定后续处理”，可以合理推断出不建议直接盲目重新提交。但在严格NLI中，原文没有显式的“建议不要尝试重新提交”这句话，而是说“系统会拒绝”。通常这类政策文档的意图是不鼓励重复提交。让我们看更严格的解释：原文说“系统会拒绝...客户应查询...”。这暗示了正确的做法是查询而不是重新提交。因此可以视为可推断的建议。",
+              "verdict": 1
+            },
+            {
+              "statement": "提交退款申请成功仅表示建立了待处理记录（pending 状态）。",
+              "reason": "上下文第一节指出：“退款申请提交成功，只表示系统建立了待处理的退款申请，通常处于 pending 状态，即待审核。”",
+              "verdict": 1
+            },
+            {
+              "statement": "提交退款申请成功并不等于审核通过。",
+              "reason": "上下文第一节指出：“提交申请不代表审核通过”。",
+              "verdict": 1
+            },
+            {
+              "statement": "提交退款申请成功并不等于已退款。",
+              "reason": "上下文第一节指出：“提交申请...也不代表已经执行退款。”",
+              "verdict": 1
+            },
+            {
+              "statement": "如需进一步协助查询具体进度，请提供您本人的完整订单编号。",
+              "reason": "上下文第二节指出：“提交退款申请需要客户本人的完整订单编号...系统会根据当前登录身份检查订单归属”。虽然这是针对“提交申请”的要求，但查询进度通常也需要验证身份和订单归属。然而，原文并没有明确说明“查询进度”时需要提供完整订单编号，只说了“提交申请”需要。此外，原文提到“客户只提供商品图片...不能代替订单归属校验”，暗示查询/操作需要校验。但严格来说，关于“查询进度”的具体输入要求未在上下文中明确列出，只列出了“提交申请”的要求。不过，通常客服场景下查询也需订单号。让我们仔细看：原文说“客户应查询已有申请的审核状态...”。它没有明确说查询时需要什么信息。但是，为了进行查询，系统必须知道是哪个订单。第二节说“提交...需要...完整订单编号”。对于查询，虽然没有明说，但逻辑上需要标识符。然而，作为NLI任务，必须基于“直接推断”。原文未明确提及查询进度的所需信息。因此，这个陈述可能被视为不可直接推断，或者依赖于通用常识而非文本。鉴于其他陈述都非常贴合文本，这条略显牵强。但再看第二节最后一句：“不得编造订单号...”。这主要约束提交。让我们判定为0，因为文本只规定了*提交*申请需要完整订单编号，未规定*查询*进度需要。",
+              "verdict": 0
+            },
+            {
+              "statement": "提供完整订单编号是为了核实身份和订单归属。",
+              "reason": "上下文第二节指出：“提交退款申请需要客户本人的完整订单编号...系统会根据当前登录身份检查订单归属和申请条件。” 这表明提供订单编号（结合登录身份）的目的是为了检查/核实订单归属。",
+              "verdict": 1
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.8153884740505007,
+          "evaluated_at": "2026-11-01T06:46:17.460489+00:00",
+          "duration_seconds": 6.339
+        }
+      }
+    },
+    "rag-003/hybrid_rerank": {
+      "case_id": "rag-003",
+      "method": "hybrid_rerank",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:06.086176+00:00",
+          "duration_seconds": 2.69
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:38:30.586985+00:00",
+          "duration_seconds": 6.796
+        },
+        "faithfulness": {
+          "score": 0.8888888888888888,
+          "evaluated_at": "2026-11-01T06:42:51.403342+00:00",
+          "duration_seconds": 9.947,
+          "judgments": [
+            {
+              "statement": "根据企业知识库关于退款申请的规定，针对该情况的解答如下。",
+              "reason": "The context is explicitly labeled as 'OmniSupport AI 项目模拟企业知识' (OmniSupport AI project simulated enterprise knowledge) and discusses refund application rules, so this introductory statement is faithful to the nature of the document.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果同一订单已有待审核或审核通过的有效退款申请，系统会拒绝再次创建新的有效申请。",
+              "reason": "Section '三、已有有效申请时的处理' states: '同一订单已有待审核或审核通过的有效退款申请时，系统会拒绝再次创建有效申请。'",
+              "verdict": 1
+            },
+            {
+              "statement": "重复申请被拒绝并不代表原有的那笔待审核申请失效。",
+              "reason": "Section '三、已有有效申请时的处理' states: '重复申请被拒绝，不代表原申请失效...'",
+              "verdict": 1
+            },
+            {
+              "statement": "重复申请被拒绝并不代表退款已经执行。",
+              "reason": "Section '三、已有有效申请时的处理' states: '重复申请被拒绝...也不代表原申请已经执行退款。'",
+              "verdict": 1
+            },
+            {
+              "statement": "建议直接查询原有申请的审核状态或退款执行结果，而不是重新提交申请。",
+              "reason": "Section '三、已有有效申请时的处理' advises: '客户应查询已有申请的审核状态或退款执行结果。' Since the system rejects new applications when valid ones exist, querying the existing one is the correct action implied by the policy.",
+              "verdict": 1
+            },
+            {
+              "statement": "提交申请仅表示建立了待处理记录，通常处于 pending 状态。",
+              "reason": "Section '一、提交申请代表什么' states: '退款申请提交成功，只表示系统建立了待处理的退款申请，通常处于 pending 状态，即待审核。'",
+              "verdict": 1
+            },
+            {
+              "statement": "提交申请不代表审核通过。",
+              "reason": "Section '一、提交申请代表什么' states: '提交申请不代表审核通过...'",
+              "verdict": 1
+            },
+            {
+              "statement": "提交申请不代表退款已到账。",
+              "reason": "Section '一、提交申请代表什么' states: '提交申请...也不代表已经执行退款。' Additionally, the header notes that execution is a simulation and does not involve real fund transfer, but in the context of the workflow steps, submission is distinct from execution/completion. The statement aligns with the distinction made in Section One.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果无法确认原有申请的状态，建议联系人工客服进行核实。",
+              "reason": "Section '六、没有执行记录或结果无法确认' states: '应先核对退款申请编号和当前账号，再按需要查询申请状态。' It does not mention contacting human customer service ('联系人工客服') as the specific next step; it emphasizes checking IDs and querying status within the system first.",
+              "verdict": 0
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.7855156448086259,
+          "evaluated_at": "2026-11-01T06:46:23.197145+00:00",
+          "duration_seconds": 5.735
+        }
+      }
+    },
+    "rag-004/bm25": {
+      "case_id": "rag-004",
+      "method": "bm25",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:08.856086+00:00",
+          "duration_seconds": 2.769
+        },
+        "context_precision": {
+          "score": 0.5833333333041666,
+          "evaluated_at": "2026-11-01T06:38:35.545167+00:00",
+          "duration_seconds": 4.957
+        },
+        "faithfulness": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:42:58.538416+00:00",
+          "duration_seconds": 7.133,
+          "judgments": [
+            {
+              "statement": "根据企业知识库关于工单处理流程的规定，工单关闭后客户不能继续追加回复。",
+              "reason": "Context explicitly states: '工单关闭后，客户和处理员工都不能继续追加回复' (After the ticket is closed, neither customers nor processing employees can continue to add replies).",
+              "verdict": 1
+            },
+            {
+              "statement": "根据企业知识库关于工单处理流程的规定，工单关闭后处理员工不能继续追加回复。",
+              "reason": "Context explicitly states: '工单关闭后，客户和处理员工都不能继续追加回复' (After the ticket is closed, neither customers nor processing employees can continue to add replies).",
+              "verdict": 1
+            },
+            {
+              "statement": "工单关闭不会删除此前的问题说明或回复记录。",
+              "reason": "Context explicitly states: '关闭不会删除此前的问题说明或回复记录' (Closing will not delete previous problem descriptions or reply records).",
+              "verdict": 1
+            },
+            {
+              "statement": "工单关闭后用户仍可以查询到之前的沟通内容。",
+              "reason": "Context states that after closing, '已有沟通记录仍可查询' (existing communication records can still be queried). While it doesn't explicitly use the word 'user', in the context of service tickets, the customer (user) and staff are the parties involved who can query records as per section 4 ('双方的沟通记录...便于确定先后顺序') and section 5. The statement is a reasonable inference from 'existing communication records can still be queried'.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果有新的服务需求，建议创建一个新的工单并明确说明新诉求。",
+              "reason": "Context states: '再次提出不同的服务需求时，应明确说明新诉求，不能声称已经把关闭的工单重新打开' (When raising different service needs again, new demands should be clearly stated, and one cannot claim to have reopened the closed ticket). It also mentions earlier that the system does not support reopening tickets. Therefore, creating a new ticket is the implied correct action for new needs, and stating new demands is explicitly required.",
+              "verdict": 1
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.8396830675795584,
+          "evaluated_at": "2026-11-01T06:46:30.853373+00:00",
+          "duration_seconds": 7.655
+        }
+      }
+    },
+    "rag-004/dense": {
+      "case_id": "rag-004",
+      "method": "dense",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:10.607044+00:00",
+          "duration_seconds": 1.75
+        },
+        "context_precision": {
+          "score": 0.99999999995,
+          "evaluated_at": "2026-11-01T06:38:41.028088+00:00",
+          "duration_seconds": 5.482
+        },
+        "faithfulness": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:43:05.737395+00:00",
+          "duration_seconds": 7.197,
+          "judgments": [
+            {
+              "statement": "根据企业知识库《人工服务工单处理流程》的规定，工单关闭后客户不能继续追加回复或留言。",
+              "reason": "Context explicitly states: \"工单关闭后，客户和处理员工都不能继续追加回复\" (After the ticket is closed, neither the customer nor the handling employee can continue to add replies).",
+              "verdict": 1
+            },
+            {
+              "statement": "工单关闭不会删除此前的沟通记录。",
+              "reason": "Context explicitly states: \"关闭不会删除此前的问题说明或回复记录\" (Closing will not delete previous problem descriptions or reply records).",
+              "verdict": 1
+            },
+            {
+              "statement": "此前的沟通记录包括问题说明和客服回复内容。",
+              "reason": "The context mentions that closing does not delete \"previous problem descriptions or reply records\" and refers to communication records generally. It implies these are the components of the history.",
+              "verdict": 1
+            },
+            {
+              "statement": "客户仍可以查询工单关闭前的历史消息。",
+              "reason": "Context explicitly states: \"已有沟通记录仍可查询\" (Existing communication records can still be queried) after closure.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果客户有新的服务需求，客户需要重新创建一个新的工单并明确说明新诉求。",
+              "reason": "Context states: \"再次提出不同的服务需求时，应明确说明新诉求... 当前系统尚未提供重开工单...的功能\" (When raising different service needs again, new demands should be clearly stated... The current system has not yet provided the function of reopening tickets...). This implies a new ticket must be created since reopening is not supported.",
+              "verdict": 1
+            },
+            {
+              "statement": "当前系统暂不支持重开已关闭的工单。",
+              "reason": "Context explicitly states: \"当前系统尚未提供重开工单...的功能\" (The current system has not yet provided the function of reopening tickets).",
+              "verdict": 1
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.8336174104680616,
+          "evaluated_at": "2026-11-01T06:46:35.561785+00:00",
+          "duration_seconds": 4.706
+        }
+      }
+    },
+    "rag-004/hybrid": {
+      "case_id": "rag-004",
+      "method": "hybrid",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:12.856490+00:00",
+          "duration_seconds": 2.248
+        },
+        "context_precision": {
+          "score": 0.9999999999,
+          "evaluated_at": "2026-11-01T06:38:47.070220+00:00",
+          "duration_seconds": 6.041
+        },
+        "faithfulness": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:43:13.229237+00:00",
+          "duration_seconds": 7.49,
+          "judgments": [
+            {
+              "statement": "The answer is based on the enterprise knowledge base document titled \"Manual Service Ticket Processing Process\" with document number SERVICE-TICKET-001.",
+              "reason": "The context explicitly states the document title as '人工服务工单处理流程' (which translates to Manual Service Ticket Processing Process) and the document number as 'SERVICE-TICKET-001'.",
+              "verdict": 1
+            },
+            {
+              "statement": "Customers cannot continue to add replies or leave messages after a ticket is closed.",
+              "reason": "The context states under section '五、关闭后的行为' that '工单关闭后，客户和处理员工都不能继续追加回复' (After the ticket is closed, neither customers nor processing employees can continue to add replies).",
+              "verdict": 1
+            },
+            {
+              "statement": "Closing a ticket does not delete previous problem descriptions.",
+              "reason": "The context states '关闭不会删除此前的问题说明或回复记录' (Closing will not delete previous problem descriptions or reply records).",
+              "verdict": 1
+            },
+            {
+              "statement": "Closing a ticket does not delete customer service reply records.",
+              "reason": "The context states '关闭不会删除此前的问题说明或回复记录' (Closing will not delete previous problem descriptions or reply records), which includes reply records from customer service/employees.",
+              "verdict": 1
+            },
+            {
+              "statement": "Existing communication records remain queryable after a ticket is closed.",
+              "reason": "The context states '已有沟通记录仍可查询' (Existing communication records are still queryable) in the section regarding behavior after closure.",
+              "verdict": 1
+            },
+            {
+              "statement": "If there are new service needs, it is recommended to create a new ticket and clearly state the new requirements.",
+              "reason": "The context states '再次提出不同的服务需求时，应明确说明新诉求' (When raising different service needs again, new demands should be clearly stated). While it doesn't explicitly use the word 'create a new ticket', it implies starting a new interaction because reopening is not supported ('当前系统尚未提供重开工单...的功能'). The statement aligns with the instruction to clearly state new demands for different service needs.",
+              "verdict": 1
+            },
+            {
+              "statement": "The current system does not provide a function to reopen tickets.",
+              "reason": "The context explicitly states '当前系统尚未提供重开工单和重新分配处理员工的功能' (The current system has not yet provided functions for reopening tickets and reassigning processing employees).",
+              "verdict": 1
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.8737831566692807,
+          "evaluated_at": "2026-11-01T06:46:39.186917+00:00",
+          "duration_seconds": 3.624
+        }
+      }
+    },
+    "rag-004/hybrid_rerank": {
+      "case_id": "rag-004",
+      "method": "hybrid_rerank",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:14.508147+00:00",
+          "duration_seconds": 1.651
+        },
+        "context_precision": {
+          "score": 0.99999999995,
+          "evaluated_at": "2026-11-01T06:38:52.985834+00:00",
+          "duration_seconds": 5.915
+        },
+        "faithfulness": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:43:28.094111+00:00",
+          "duration_seconds": 14.863,
+          "judgments": [
+            {
+              "statement": "根据企业知识库《人工服务工单处理流程》（文档编号：SERVICE-TICKET-001）的规定，工单关闭后客户不能继续追加回复。",
+              "reason": "Context explicitly states: '工单关闭后，客户和处理员工都不能继续追加回复' (After the ticket is closed, neither the customer nor the processing employee can continue to add replies).",
+              "verdict": 1
+            },
+            {
+              "statement": "根据企业知识库《人工服务工单处理流程》（文档编号：SERVICE-TICKET-001）的规定，工单关闭后处理员工不能继续追加回复。",
+              "reason": "Context explicitly states: '工单关闭后，客户和处理员工都不能继续追加回复' (After the ticket is closed, neither the customer nor the processing employee can continue to add replies).",
+              "verdict": 1
+            },
+            {
+              "statement": "工单关闭后之前的沟通记录不会被删除。",
+              "reason": "Context states: '关闭不会删除此前的问题说明或回复记录' (Closing will not delete previous problem descriptions or reply records), which implies communication records are preserved.",
+              "verdict": 1
+            },
+            {
+              "statement": "工单关闭后客服回复内容不会被删除。",
+              "reason": "Context states: '关闭不会删除此前的问题说明或回复记录' (Closing will not delete previous problem descriptions or reply records). Customer service replies are part of the reply records.",
+              "verdict": 1
+            },
+            {
+              "statement": "工单关闭后用户仍然可以查询到已有的问题说明和回复记录。",
+              "reason": "Context states: '已有沟通记录仍可查询' (Existing communication records can still be queried) and '关闭不会删除此前的问题说明或回复记录' (Closing will not delete previous problem descriptions or reply records).",
+              "verdict": 1
+            },
+            {
+              "statement": "如果用户有新的服务需求，建议用户明确说明新诉求并创建新的工单。",
+              "reason": "Context states: '再次提出不同的服务需求时，应明确说明新诉求' (When raising different service needs again, new demands should be clearly stated). While it doesn't explicitly say 'create a new ticket', it says one cannot claim to have reopened the closed ticket, implying a new process/ticket is needed for new needs. However, strictly speaking, the text says 'should clearly state new demands' in the context of not reopening. It does not explicitly mandate 'creating a new ticket' as the only option, but rather prohibits claiming the old one is open. Let's look closer. '当前系统尚未提供重开工单...的功能。再次提出不同的服务需求时，应明确说明新诉求，不能声称已经把关闭的工单重新打开。' This implies the action is to state new demands, likely via a new interaction since the old one is closed and cannot be reopened. The statement adds 'and create a new ticket'. Is this directly inferred? The system allows creating tickets via chat assistant ('聊天助手支持创建工单'). Since the old one is closed and cannot be reopened, a new need logically requires a new ticket. But does the text *explicitly* say 'create a new ticket'? It says 'state new demands'. It's a strong inference but maybe not direct. Let's re-read carefully. '不能声称已经把关闭的工单重新打开' suggests you must start fresh. In support workflows, starting fresh means a new ticket. I will mark it as 1 because it is the logical operational instruction derived from the constraints (cannot reopen, must state new demand). Actually, looking at strict NLI, if the text doesn't say 'create a new ticket', it might be 0. But usually, 'state new demand' in a closed ticket context implies a new request instance. Let's check the other statements first. Statement 7 is definitely 1. Statement 6: The text says 'should clearly state new demands'. It does not explicitly say 'create a new ticket'. However, since the current ticket is closed and cannot be reopened, any new demand must be handled separately. Given the context mentions 'chat assistant supports creating tickets', it is highly probable. But is it *directly* inferred? Maybe not strictly. Let's look at the phrasing '建议用户...'. The text is prescriptive: '应明确说明新诉求'. It doesn't use the word 'suggest'. And it doesn't mention 'create new ticket' explicitly. I will lean towards 0 for strict faithfulness unless 'new demand' inherently equals 'new ticket' in this specific document's logic. Wait, '再次提出不同的服务需求时' (When raising different service needs again)... '应明确说明新诉求' (should clearly state new demands). It doesn't say how. But since the old one is closed, you can't reply there. So you must create a new one. I'll stick with 1 as it's the necessary procedural step implied by the inability to reopen. Actually, let's look at similar examples. Usually, if the specific action isn't named, it's risky. But here, 'cannot reopen' + 'closed' = 'must start new'. I will mark it 1.",
+              "verdict": 1
+            },
+            {
+              "statement": "当前系统尚未提供重开工单的功能。",
+              "reason": "Context explicitly states: '当前系统尚未提供重开工单和重新分配处理员工的功能' (The current system has not yet provided functions for reopening tickets and reassigning processing employees).",
+              "verdict": 1
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.9011097179447538,
+          "evaluated_at": "2026-11-01T06:46:43.151250+00:00",
+          "duration_seconds": 3.954
+        }
+      }
+    },
+    "rag-005/bm25": {
+      "case_id": "rag-005",
+      "method": "bm25",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:18.104128+00:00",
+          "duration_seconds": 3.593
+        },
+        "context_precision": {
+          "score": 0.9999999999666667,
+          "evaluated_at": "2026-11-01T06:38:59.115402+00:00",
+          "duration_seconds": 6.128
+        },
+        "faithfulness": {
+          "score": 0.6,
+          "evaluated_at": "2026-11-01T06:43:41.394283+00:00",
+          "duration_seconds": 13.299,
+          "judgments": [
+            {
+              "statement": "不能照着其他品牌耳机的指示灯颜色来判断这款耳机是否充满电。",
+              "reason": "Context explicitly states: '不能套用其他品牌的充电时间、灯色含义或充电方式' (Cannot apply other brands' charging time, light color meanings, or charging methods).",
+              "verdict": 1
+            },
+            {
+              "statement": "根据企业知识库文档编号PRO-CHARGING-001关于蓝牙无线耳机Pro的说明，当前针对该型号的资料中没有定义电池容量参数。",
+              "reason": "Context header states: '本资料不定义电池容量...' (This document does not define battery capacity...).",
+              "verdict": 1
+            },
+            {
+              "statement": "根据企业知识库文档编号PRO-CHARGING-001关于蓝牙无线耳机Pro的说明，当前针对该型号的资料中没有定义充电功率参数。",
+              "reason": "Context header states: '本资料不定义...充电功率...' (This document does not define ... charging power ...).",
+              "verdict": 1
+            },
+            {
+              "statement": "根据企业知识库文档编号PRO-CHARGING-001关于蓝牙无线耳机Pro的说明，当前针对该型号的资料中没有定义充满时间参数。",
+              "reason": "Context header states: '本资料不定义...充满时间...' (This document does not define ... full charge time ...).",
+              "verdict": 1
+            },
+            {
+              "statement": "根据企业知识库文档编号PRO-CHARGING-001关于蓝牙无线耳机Pro的说明，当前针对该型号的资料中没有定义指示灯颜色规则。",
+              "reason": "Context header states: '本资料不定义...指示灯颜色规则' (This document does not define ... indicator light color rules).",
+              "verdict": 1
+            },
+            {
+              "statement": "明确规定不能套用其他品牌的充电时间、灯色含义或充电方式。",
+              "reason": "Context section five states: '不能套用其他品牌的充电时间、灯色含义或充电方式'.",
+              "verdict": 1
+            },
+            {
+              "statement": "不同品牌和型号的耳机在指示灯逻辑上可能存在差异。",
+              "reason": "While the context prohibits applying other brands' logic, it does not explicitly state that differences *exist* as a general fact, only that one cannot use them for this specific model. However, the prohibition implies they are not interchangeable. But strictly speaking, the text says 'cannot apply', not 'they differ'. Let's look closer. The text says 'Current materials do not define these parameters... Cannot apply other brands...'. It doesn't explicitly confirm the existence of differences in logic across all brands, just that you can't use them here. Usually, NLI requires direct inference. The statement is a generalization about hardware behavior not present in the text.",
+              "verdict": 0
+            },
+            {
+              "statement": "直接参照其他品牌可能导致误判。",
+              "reason": "The context instructs to query confirmed specifications for this model and forbids using other brands' data. While misjudgment is a likely consequence, the text does not explicitly state 'may lead to misjudgment'. It simply says 'do not apply'. In strict NLI, if the outcome isn't stated, it's often 0 unless implied strongly. However, looking at the previous example, 'dedicated student' was inferred from 'diligent... spends significant time'. Here, 'misjudgment' is an external inference. The text says 'cannot apply... nor replace verification with extended power-on time'. It focuses on procedure, not error outcomes. I will mark as 0 because it's an assumption about the result rather than a stated rule.",
+              "verdict": 0
+            },
+            {
+              "statement": "建议查阅随产品附带的说明书获取该型号经过确认的具体指示灯含义及充电时长信息。",
+              "reason": "The context says '应查询经过确认的本型号说明' (should query the confirmed description for this model). It does not specify *where* to find this (e.g., user manual, website, support ticket). Assuming it is the 'user manual attached to the product' is adding information not present in the text.",
+              "verdict": 0
+            },
+            {
+              "statement": "建议联系人工客服获取该型号经过确认的具体指示灯含义及充电时长信息。",
+              "reason": "Similar to the previous statement, the context says to 'query confirmed descriptions' but does not specify contacting human customer service as the method. It might be an automated system or a database lookup.",
+              "verdict": 0
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.8861579380468451,
+          "evaluated_at": "2026-11-01T06:46:49.925017+00:00",
+          "duration_seconds": 6.772
+        }
+      }
+    },
+    "rag-005/dense": {
+      "case_id": "rag-005",
+      "method": "dense",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:21.593666+00:00",
+          "duration_seconds": 3.489
+        },
+        "context_precision": {
+          "score": 0.9999999999666667,
+          "evaluated_at": "2026-11-01T06:39:04.344950+00:00",
+          "duration_seconds": 5.228
+        },
+        "faithfulness": {
+          "score": 0.75,
+          "evaluated_at": "2026-11-01T06:43:51.915217+00:00",
+          "duration_seconds": 10.519,
+          "judgments": [
+            {
+              "statement": "不能照着其他品牌耳机的指示灯颜色判断这款耳机是否充满电。",
+              "reason": "Context explicitly states: '不能套用其他品牌的充电时间、灯色含义或充电方式' (Cannot apply other brands' charging time, light color meanings, or charging methods).",
+              "verdict": 1
+            },
+            {
+              "statement": "企业知识库《蓝牙无线耳机 Pro 充电问题排查》（文档编号：PRO-CHARGING-001）规定了相关事项。",
+              "reason": "The context is titled '蓝牙无线耳机 Pro 充电问题排查' with document number 'PRO-CHARGING-001' and describes procedures for troubleshooting, thus it prescribes relevant matters.",
+              "verdict": 1
+            },
+            {
+              "statement": "当前针对“蓝牙无线耳机 Pro”的资料中，并没有定义该型号耳机的指示灯颜色含义或充满电的判断标准。",
+              "reason": "The context explicitly states in the header: '本资料不定义电池容量、充电功率、充满时间或指示灯颜色规则' (This material does not define battery capacity, charging power, full charge time, or indicator light color rules).",
+              "verdict": 1
+            },
+            {
+              "statement": "明确说明不能套用其他品牌的充电时间、灯色含义或充电方式来判断本款耳机的状态。",
+              "reason": "Section Five states: '不能套用其他品牌的充电时间、灯色含义或充电方式' (Cannot apply other brands' charging time, light color meanings, or charging methods).",
+              "verdict": 1
+            },
+            {
+              "statement": "如果需要确认充满电的状态或指示灯含义，请查询经过确认的本型号官方使用说明。",
+              "reason": "Section Five advises: '应查询经过确认的本型号说明' (Should query the confirmed instructions for this model) when customers ask about these parameters.",
+              "verdict": 1
+            },
+            {
+              "statement": "建议查看产品包装盒内的说明书以获取该特定型号的准确充电指示信息。",
+              "reason": "While the context says to check 'confirmed instructions for this model', it does not specifically mention looking at the manual inside the product packaging box. This is an assumption not directly supported by the text.",
+              "verdict": 0
+            },
+            {
+              "statement": "建议访问官方网站以获取该特定型号的准确充电指示信息。",
+              "reason": "The context instructs to query 'confirmed instructions for this model' but does not specify that the official website is the source for these instructions.",
+              "verdict": 0
+            },
+            {
+              "statement": "不要依赖其他品牌的经验进行判断。",
+              "reason": "The context explicitly forbids applying other brands' parameters ('不能套用其他品牌...'), which implies one should not rely on other brands' experience for judgment.",
+              "verdict": 1
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.7441913834536537,
+          "evaluated_at": "2026-11-01T06:46:54.558236+00:00",
+          "duration_seconds": 4.632
+        }
+      }
+    },
+    "rag-005/hybrid": {
+      "case_id": "rag-005",
+      "method": "hybrid",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:24.070308+00:00",
+          "duration_seconds": 2.475
+        },
+        "context_precision": {
+          "score": 0.9999999999666667,
+          "evaluated_at": "2026-11-01T06:39:10.989798+00:00",
+          "duration_seconds": 6.644
+        },
+        "faithfulness": {
+          "score": 0.8,
+          "evaluated_at": "2026-11-01T06:43:58.497190+00:00",
+          "duration_seconds": 6.58,
+          "judgments": [
+            {
+              "statement": "不可以参照其他品牌耳机的指示灯颜色来判断这款耳机是否充满电。",
+              "reason": "Context explicitly states: '不能套用其他品牌的充电时间、灯色含义或充电方式' (Cannot apply other brands' charging time, light color meanings, or charging methods).",
+              "verdict": 1
+            },
+            {
+              "statement": "根据企业知识库文档编号PRO-CHARGING-001的规定，当前资料并未定义蓝牙无线耳机 Pro的充电时间、指示灯颜色规则或电池容量等具体参数。",
+              "reason": "The context header for document PRO-CHARGING-001 states: '本资料不定义电池容量、充电功率、充满时间或指示灯颜色规则' (This material does not define battery capacity, charging power, full charge time, or indicator light color rules).",
+              "verdict": 1
+            },
+            {
+              "statement": "企业知识库明确规定不能套用其他品牌的充电时间、灯色含义或充电方式。",
+              "reason": "Section Five of the context explicitly states: '不能套用其他品牌的充电时间、灯色含义或充电方式'.",
+              "verdict": 1
+            },
+            {
+              "statement": "建议查阅经过确认的蓝牙无线耳机 Pro官方说明书以了解该耳机具体的充电状态判断方法。",
+              "reason": "Section Five states: '应查询经过确认的本型号说明' (Should query the confirmed instructions for this model). This directly supports the suggestion to check the official manual/instructions.",
+              "verdict": 1
+            },
+            {
+              "statement": "建议联系人工客服获取关于蓝牙无线耳机 Pro充电状态判断方法的准确信息。",
+              "reason": "The context instructs users/support agents to 'query the confirmed instructions for this model' rather than contacting human customer service. It does not mention contacting human customer service as a solution.",
+              "verdict": 0
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.9754688577606649,
+          "evaluated_at": "2026-11-01T06:47:04.568903+00:00",
+          "duration_seconds": 10.008
+        }
+      }
+    },
+    "rag-005/hybrid_rerank": {
+      "case_id": "rag-005",
+      "method": "hybrid_rerank",
+      "metrics": {
+        "context_recall": {
+          "score": 1.0,
+          "evaluated_at": "2026-11-01T06:35:26.948875+00:00",
+          "duration_seconds": 2.877
+        },
+        "context_precision": {
+          "score": 0.9999999999666667,
+          "evaluated_at": "2026-11-01T06:39:17.129403+00:00",
+          "duration_seconds": 6.138
+        },
+        "faithfulness": {
+          "score": 0.6666666666666666,
+          "evaluated_at": "2026-11-01T06:44:10.304011+00:00",
+          "duration_seconds": 11.805,
+          "judgments": [
+            {
+              "statement": "不可以照着其他品牌耳机的指示灯颜色来判断这款耳机是否充满电。",
+              "reason": "Context explicitly states: '不能套用其他品牌的充电时间、灯色含义或充电方式' (Cannot apply other brands' charging time, light color meanings, or charging methods).",
+              "verdict": 1
+            },
+            {
+              "statement": "企业知识库文档编号PRO-CHARGING-001关于蓝牙无线耳机Pro的说明指出，该文档不定义电池容量、充电功率、充满时间或指示灯颜色规则。",
+              "reason": "The context header for document PRO-CHARGING-001 explicitly states: '说明：本资料不定义电池容量、充电功率、充满时间或指示灯颜色规则。'",
+              "verdict": 1
+            },
+            {
+              "statement": "不能套用其他品牌的充电时间、灯色含义或充电方式来判断本型号耳机的状态。",
+              "reason": "This is a direct quote from the context section '五、充电时长与指示灯问题': '不能套用其他品牌的充电时间、灯色含义或充电方式...'.",
+              "verdict": 1
+            },
+            {
+              "statement": "如果询问蓝牙无线耳机Pro充满需要多久或某种灯色代表什么，应查询经过确认的蓝牙无线耳机Pro官方说明书或相关指引。",
+              "reason": "The context states: '客户询问充满需要多久、某种灯色代表什么...时，应查询经过确认的本型号说明。' The statement paraphrases '本型号说明' as 'official manual or related guidelines', which is a reasonable inference of what constitutes confirmed model-specific information.",
+              "verdict": 1
+            },
+            {
+              "statement": "建议查看随附的产品说明书以获取准确的指示灯含义。",
+              "reason": "While the context says to query 'confirmed model instructions', it does not explicitly recommend checking the 'accompanying product manual' specifically. It emphasizes that the current knowledge base *does not* define these rules and warns against using other brands' data. The specific advice to check the physical manual is an external recommendation not strictly contained in the provided text, although implied by 'query confirmed instructions'. However, looking at strict faithfulness, the text says 'should query confirmed instructions for this model'. It doesn't specify 'accompanying product manual'. But more importantly, the next statement adds details not present. Let's look closer. The text says '应查询经过确认的本型号说明' (should query confirmed instructions for this model). Statement 5 says 'Suggest checking the accompanying product manual'. This is a specific interpretation of 'instructions'. Is it directly inferred? The text doesn't say 'check the box/manual'. It just says 'query confirmed instructions'. This might be considered 0 if we are being very strict about 'directly inferred'. However, usually 'confirmed instructions' implies the official documentation. Let's compare with Statement 6. Statement 6 mentions contacting human customer service if missing. The text doesn't mention contacting human CS for this specific issue, only that the AI project simulates enterprise knowledge. Actually, the text is a guide for support agents ('客服应...'). It doesn't give advice to the end user to check the manual. It tells the agent to query confirmed info. Therefore, suggesting the *user* check the manual is not directly inferred from the agent-facing instruction. Verdict 0.",
+              "verdict": 0
+            },
+            {
+              "statement": "如果说明书缺失或仍有疑问，建议联系人工客服协助核实具体型号的官方参数。",
+              "reason": "The context provides instructions for support agents ('客服应...') on how to handle queries. It does not contain any text advising customers to contact human customer service if the manual is missing. It only states that the current material does not define these parameters and one should query confirmed model instructions.",
+              "verdict": 0
+            }
+          ]
+        },
+        "answer_relevancy": {
+          "score": 0.9886037505223766,
+          "evaluated_at": "2026-11-01T06:47:13.262727+00:00",
+          "duration_seconds": 8.692
+        }
+      }
+    }
+  }
+}
