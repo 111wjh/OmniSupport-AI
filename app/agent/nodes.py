@@ -233,6 +233,7 @@ async def execute_tools(
                     arguments=function["arguments"],
                     customer_id=state["customer_id"],
                     conversation_id=state.get("conversation_id"),
+                    ticket_idempotency_key=state.get("ticket_idempotency_key"),
                 )
             except Exception:
                 logger.exception(

@@ -16,6 +16,10 @@ STATUS_LABELS = {
 }
 
 REJECTION_REPLIES = {
+    "ticket_idempotency_conflict": (
+        "本次未新建工单：同一次发送已存在不同内容的建单记录。\n"
+        "请查询已有工单，核对后再发起新的请求。"
+    ),
     "authentication_required": (
         "本次未创建工单：请先登录，再申请人工服务。"
     ),

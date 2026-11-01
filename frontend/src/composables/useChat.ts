@@ -4,6 +4,7 @@ import { getConversations, getConversationMessages } from '../api/conversation'
 import type { ConversationMessage, ConversationSummary } from '../api/conversation'
 import { sendChatMessage, streamChatMessage } from '../api/chat'
 import { sendImageQuestion } from '../api/image'
+import { getChatIdentity, forgetChatIdentity } from '../api/chatIdentity'
 import { errorMessage, isAbort } from '../api/http'
 import { splitImageMessage } from '../utils/format'
 
@@ -43,6 +44,7 @@ export function useChat(token: Readonly<Ref<string>>) {
   let listRequest: AbortController | undefined
   let historyRequest: AbortController | undefined
   const attachmentUrls = new Set<string>()
+  let lastAttempt: { storageKey: string; userId: string; assistantId: string } | undefined
 
   const activeConversation = computed(() =>
     conversations.value.find((item) => item.id === activeId.value),
@@ -149,8 +151,13 @@ export function useChat(token: Readonly<Ref<string>>) {
     void loadHistory()
   }
 
-  function newConversation() {
+  function newConversation(discardAttempt = true) {
     if (busy.value) return
+    if (discardAttempt && lastAttempt) {
+      // 用户明确开启新聊天，下一次发送是新操作。
+      forgetChatIdentity(lastAttempt.storageKey)
+      lastAttempt = undefined
+    }
     historyRequest?.abort()
     clearAttachments()
     activeId.value = null
@@ -198,15 +205,30 @@ export function useChat(token: Readonly<Ref<string>>) {
     sendError.value = ''
     activity.value = input.file ? '正在分析图片' : '正在生成回复'
     try {
-      const request = { message: text, conversation_id: originalId }
+      const identity = await getChatIdentity(token.value, originalId, text, input.file)
+      if (generation !== session) return false
+      if (lastAttempt?.storageKey === identity.storageKey) {
+        const previous = lastAttempt
+        messages.value = messages.value.filter(
+          (item) => item.id !== previous.userId && item.id !== previous.assistantId,
+        )
+      }
+      lastAttempt = { storageKey: identity.storageKey, userId: user.id, assistantId: assistant.id }
+      const request = {
+        message: text,
+        conversation_id: originalId,
+        client_request_id: identity.requestId,
+      }
       const result = input.file
-        ? await sendImageQuestion(token.value, input.file, text, originalId)
+        ? await sendImageQuestion(token.value, input.file, text, originalId, identity.requestId)
         : input.stream
           ? await streamChatMessage(token.value, request, (chunk) => {
               if (generation === session) assistant.content += chunk
             })
           : await sendChatMessage(token.value, request)
       if (generation !== session) return false
+      forgetChatIdentity(identity.storageKey)
+      lastAttempt = undefined
       assistant.content = result.reply
       assistant.state = 'complete'
       user.state = 'complete'
@@ -221,12 +243,13 @@ export function useChat(token: Readonly<Ref<string>>) {
       user.state = 'unconfirmed'
       assistant.state = 'failed'
       assistant.error = errorMessage(cause)
-      sendError.value = errorMessage(cause)
+      sendError.value = errorMessage(cause) + ' 保留原内容再次发送会复用本次请求编号。'
       return false
     } finally {
       if (generation === session) {
         busy.value = false
         activity.value = ''
+        if (assistant.state === 'complete') void loadHistory()
       }
     }
   }
@@ -241,7 +264,8 @@ export function useChat(token: Readonly<Ref<string>>) {
       conversations.value = []
       previews.value = {}
       listOffset = 0
-      newConversation()
+      lastAttempt = undefined
+      newConversation(false)
       if (token.value) void refreshConversations()
     },
     { immediate: true },

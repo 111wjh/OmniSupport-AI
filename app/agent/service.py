@@ -16,6 +16,7 @@ async def generate_agent_reply(
     image_observation: str | None = None,
     on_text_delta: Callable[[str], None] | None = None,
     conversation_id: UUID | None = None,
+    ticket_idempotency_key: str | None = None,
 ) -> str:
     """通过 LangGraph 生成客服回复，支持可选的流式文本回调。"""
 
@@ -41,6 +42,7 @@ async def generate_agent_reply(
          "messages": messages,
          "customer_id": customer_id,
          "conversation_id": conversation_id,
+         "ticket_idempotency_key": ticket_idempotency_key or f"agent-run:{workflow_thread_id}",
          "model_calls": 0,
          "refund_submission_reply": None,
          "ticket_creation_reply": None,

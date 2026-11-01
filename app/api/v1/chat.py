@@ -1,10 +1,14 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
+from uuid import UUID
+
+from app.models.chat_operation import ChatOperation
 
 from app.core.auth import get_current_customer
 from app.models.customer import Customer
 from app.schemas.chat import ChatRequest, ChatResponse
+from app.services.chat_idempotency import prepare_chat_operation, ChatIdempotencyConflictError
 from app.services.chat_service import (
     generate_reply_and_save,
     ConversationBusyError,
@@ -26,6 +30,23 @@ router = APIRouter(
 )
 
 
+async def prepare_request(
+    request: ChatRequest, customer_id: UUID,
+) -> tuple[UUID, ChatOperation | None]:
+    """发送编号先落库，确保首次请求失败后仍可找到原会话。"""
+    try:
+        if request.client_request_id is not None:
+            operation = await prepare_chat_operation(
+                customer_id, request.client_request_id, request.message, request.conversation_id,
+            )
+            return operation.conversation_id, operation
+        return await resolve_conversation_id(request.conversation_id, customer_id=customer_id), None
+    except ChatIdempotencyConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="会话不存在") from exc
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
@@ -39,17 +60,10 @@ async def chat(
     # 判断是否属于首次聊天
     is_new_conversation = request.conversation_id is None
 
-    # 创建新会话或验证已有会话
-    try:
-        conversation_id = await resolve_conversation_id(
-            request.conversation_id,
-            customer_id=current_customer.id,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=404,
-            detail="会话不存在",
-        ) from exc
+    conversation_id, operation = await prepare_request(request, current_customer.id)
+    if operation is not None and operation.reply is not None:
+        return ChatResponse(reply=operation.reply, conversation_id=conversation_id)
+    context = {"operation_id": operation.id} if operation is not None else {}
 
     try:
         # 读取历史、调用 Qwen、保存聊天记录
@@ -57,11 +71,12 @@ async def chat(
             message=request.message,
             conversation_id=conversation_id,
             customer_id=current_customer.id,
-            )
+            **context,
+        )
 
     except Exception as exc:
         # 仅对本次新创建的空会话执行清理
-        if is_new_conversation:
+        if is_new_conversation and operation is None:
             try:
                 await delete_empty_conversation(conversation_id)
             except Exception:
@@ -120,17 +135,13 @@ async def chat_stream(
 
     is_new_conversation = request.conversation_id is None
 
-    # 先验证或创建会话
-    try:
-        conversation_id = await resolve_conversation_id(
-            request.conversation_id,
-            customer_id=current_customer.id,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=404,
-            detail="会话不存在",
-        ) from exc
+    conversation_id, operation = await prepare_request(request, current_customer.id)
+    if operation is not None and operation.reply is not None:
+        async def replay():
+            yield format_sse_event("token", {"content": operation.reply})
+            yield format_sse_event("done", {"conversation_id": str(conversation_id)})
+        return create_sse_response(replay())
+    context = {"operation_id": operation.id} if operation is not None else {}
 
     async def event_generator():
         queue: asyncio.Queue[object] = asyncio.Queue()
@@ -148,6 +159,7 @@ async def chat_stream(
                     conversation_id=conversation_id,
                     customer_id=current_customer.id,
                     on_text_delta=on_text_delta,
+                    **context,
                 )
             finally:
                 # 无论成功还是失败，都通知消费者结束读取
@@ -219,7 +231,7 @@ async def chat_stream(
                 pass
 
             # 仅清理本次新建且未成功完成的空会话
-            if is_new_conversation and not succeeded:
+            if is_new_conversation and operation is None and not succeeded:
                 try:
                     await delete_empty_conversation(
                         conversation_id

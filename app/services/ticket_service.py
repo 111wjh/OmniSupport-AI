@@ -7,7 +7,11 @@ from app.models.conversation import Conversation
 from app.models.ticket import Ticket, TicketStatus
 from app.schemas.ticket import TicketCreateRequest
 from app.services.order_service import get_order_by_number
+from sqlalchemy.exc import IntegrityError
 
+from app.services.ticket_idempotency import (
+    build_ticket_request_fingerprint,
+)
 
 class TicketRelatedResourceNotFoundError(Exception):
     """关联对象不存在，或不属于当前客户。"""
@@ -22,14 +26,64 @@ class TicketClaimConflictError(Exception):
 class TicketCloseNotAllowedError(Exception):
     """工单当前状态不允许关闭。"""
 
+class TicketIdempotencyConflictError(Exception):
+    """同一客户使用相同幂等键，却提交了不同的创建内容。"""
+
+async def _get_idempotent_ticket(
+    session: AsyncSession,
+    customer_id: UUID,
+    idempotency_key: str,
+    request_fingerprint: str,
+) -> Ticket | None:
+    """查询当前客户的幂等记录，并核对创建请求是否一致。"""
+
+    stmt = (
+        select(Ticket)
+        .where(
+            Ticket.customer_id == customer_id,
+            Ticket.idempotency_key == idempotency_key,
+        )
+        .execution_options(populate_existing=True)
+    )
+
+    ticket = await session.scalar(stmt)
+
+    if ticket is None:
+        return None
+
+    if ticket.request_fingerprint != request_fingerprint:
+        raise TicketIdempotencyConflictError(
+            "该幂等键对应的工单创建内容不一致，请核对原请求。"
+        )
+
+    return ticket
+
 async def create_customer_ticket(
     session: AsyncSession,
     customer_id: UUID,
     data: TicketCreateRequest,
+    idempotency_key: str | None = None,
 ) -> Ticket:
-    """校验关联对象归属，并创建当前客户的工单。"""
+    """校验归属并创建工单；携带幂等键时支持安全重试。"""
+
+    request_fingerprint: str | None = None
 
     try:
+        if idempotency_key is not None:
+            request_fingerprint = (
+                build_ticket_request_fingerprint(data)
+            )
+
+            existing_ticket = await _get_idempotent_ticket(
+                session=session,
+                customer_id=customer_id,
+                idempotency_key=idempotency_key,
+                request_fingerprint=request_fingerprint,
+            )
+
+            if existing_ticket is not None:
+                return existing_ticket
+
         order_id: UUID | None = None
         conversation_id: UUID | None = None
 
@@ -70,10 +124,43 @@ async def create_customer_ticket(
             subject=data.subject,
             description=data.description,
             status=TicketStatus.OPEN.value,
+            idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint,
         )
 
         session.add(ticket)
         await session.commit()
+
+    except IntegrityError as exc:
+        await session.rollback()
+
+        diagnostic = getattr(exc.orig, "diag", None)
+        constraint_name = getattr(
+            diagnostic,
+            "constraint_name",
+            None,
+        )
+
+        # 只处理当前幂等唯一约束造成的冲突。
+        if (
+            constraint_name
+            != "uq_tickets_customer_idempotency_key"
+            or idempotency_key is None
+            or request_fingerprint is None
+        ):
+            raise
+
+        existing_ticket = await _get_idempotent_ticket(
+            session=session,
+            customer_id=customer_id,
+            idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint,
+        )
+
+        if existing_ticket is None:
+            raise
+
+        return existing_ticket
 
     except Exception:
         await session.rollback()
