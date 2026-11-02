@@ -15,6 +15,11 @@ class ChatRequest(BaseModel):
         default=None,
         description="会话唯一标识，首次聊天时可以为空",
     )
+    client_request_id: UUID | None = Field(
+        default=None,
+        description="一次发送的稳定编号；重试保持原编号、消息和原 conversation_id，新消息使用新 UUID",
+    )
+
     @field_validator("message")
     @classmethod
     def validate_message(cls,value: str) -> str:

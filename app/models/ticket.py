@@ -10,6 +10,7 @@ from sqlalchemy import (
     String,
     Text,
     func,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -65,6 +66,25 @@ class Ticket(Base):
             "length(trim(description)) > 0",
             name="ck_tickets_description_not_empty",
         ),
+        UniqueConstraint(
+            "customer_id",
+            "idempotency_key",
+            name="uq_tickets_customer_idempotency_key",
+        ),
+        CheckConstraint(
+            """
+            (
+                idempotency_key IS NULL
+                AND request_fingerprint IS NULL
+            )
+            OR
+            (
+                idempotency_key IS NOT NULL
+                AND request_fingerprint IS NOT NULL
+            )
+            """,
+            name="ck_tickets_idempotency_fields_paired",
+        ),
         Index(
             "ix_tickets_customer_created",
             "customer_id",
@@ -89,6 +109,17 @@ class Ticket(Base):
         PG_UUID(as_uuid=True),
         ForeignKey("customers.id"),
         nullable=False,
+    )
+    # 同一次创建操作的重试使用相同的幂等键。
+    idempotency_key: Mapped[str | None] = mapped_column(
+        String(128),
+        nullable=True,
+    )
+
+    # 保存首次创建请求的摘要，用于识别同键不同内容。
+    request_fingerprint: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
     )
 
     # 工单可以关联订单，也可以用于非订单问题。

@@ -13,11 +13,13 @@ export async function sendImageQuestion(
   file: File,
   question: string,
   conversationId: string | null,
+  clientRequestId: string,
 ): Promise<ChatResponse> {
   validateImage(file)
   const body = new FormData()
   body.append('file', file)
   body.append('question', question)
+  body.append('client_request_id', clientRequestId)
   if (conversationId) body.append('conversation_id', conversationId)
   // FormData 的 Content-Type 和 boundary 必须由浏览器生成。
   const data = await jsonRequest('/api/v1/images/upload', { token, method: 'POST', body })

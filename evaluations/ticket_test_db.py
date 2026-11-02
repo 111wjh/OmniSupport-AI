@@ -22,6 +22,8 @@ from app.models import (
     Staff,
     Ticket,
     TicketMessage,
+    Message,
+    ChatOperation,
 )
 
 
@@ -34,6 +36,8 @@ TEST_TABLES = [
     Conversation.__table__,
     Ticket.__table__,
     TicketMessage.__table__,
+    Message.__table__,
+    ChatOperation.__table__,
 ]
 
 

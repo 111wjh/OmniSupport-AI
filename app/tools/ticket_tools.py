@@ -7,8 +7,10 @@ from pydantic import ValidationError
 from app.db.session import AsyncSessionLocal
 from app.schemas.agent_ticket import CreateSupportTicketArguments
 from app.schemas.ticket import TicketCreateRequest
+from app.services.ticket_receipt import ticket_creation_result
 from app.services.ticket_service import (
     TicketRelatedResourceNotFoundError,
+    TicketIdempotencyConflictError,
     create_customer_ticket,
 )
 
@@ -20,6 +22,7 @@ async def execute_create_support_ticket(
     arguments: str,
     customer_id: UUID | None,
     conversation_id: UUID | None,
+    idempotency_key: str | None = None,
 ) -> dict[str, Any]:
     """校验工具参数，并为当前客户创建关联当前会话的工单。"""
 
@@ -65,22 +68,17 @@ async def execute_create_support_ticket(
                 session=session,
                 customer_id=customer_id,
                 data=data,
+                idempotency_key=idempotency_key,
             )
 
-            return {
-                "success": True,
-                "data": {
-                    "id": str(ticket.id),
-                    "subject": ticket.subject,
-                    "status": ticket.status,
-                    "conversation_id": str(ticket.conversation_id),
-                    "created_at": ticket.created_at.isoformat(),
-                },
-                "message": (
-                    "人工服务工单已创建，等待工作人员领取。"
-                    "这不代表人工客服已经接入。"
-                ),
-            }
+            return ticket_creation_result(ticket)
+
+    except TicketIdempotencyConflictError:
+        return {
+            "success": False,
+            "error": "ticket_idempotency_conflict",
+            "message": "本次未新建工单：同一次发送已有不同内容的建单记录，请查询已有工单。",
+        }
 
     except TicketRelatedResourceNotFoundError:
         return {

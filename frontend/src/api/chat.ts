@@ -3,6 +3,7 @@ import { ApiError, apiFetch, isRecord, jsonRequest } from './http'
 export interface ChatRequest {
   message: string
   conversation_id: string | null
+  client_request_id: string
 }
 export interface ChatResponse {
   reply: string

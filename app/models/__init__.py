@@ -9,6 +9,7 @@ from app.models.refund_execution import RefundExecution
 from app.models.refund_execution_audit_event import RefundExecutionAuditEvent
 from app.models.ticket import Ticket
 from app.models.ticket_message import TicketMessage
+from app.models.chat_operation import ChatOperation
 
 __all__ = [
     "Conversation",
@@ -22,4 +23,5 @@ __all__ = [
     "RefundExecutionAuditEvent",
     "Ticket",
     "TicketMessage",
+    "ChatOperation",
 ]

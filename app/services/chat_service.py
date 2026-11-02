@@ -4,6 +4,11 @@ from uuid import UUID, uuid4
 
 from app.db.session import AsyncSessionLocal
 from app.agent.service import generate_agent_reply
+from app.agent.ticket_reply import build_ticket_creation_reply
+from app.services.ticket_receipt import ticket_creation_result
+from app.services.chat_idempotency import (
+    load_chat_operation, find_created_ticket, complete_chat_operation, ticket_key,
+)
 from app.llm.message_formatter import format_history_for_llm
 from app.services.conversation_service import (
     acquire_conversation,
@@ -78,6 +83,7 @@ async def generate_reply_and_save(
     customer_id: UUID | None = None,
     image_observation: str | None = None,
     on_text_delta: Callable[[str], None] | None = None,
+    operation_id: UUID | None = None,
 ) -> str:
     """生成回复、安全保存消息，并自动续期会话处理权。"""
 
@@ -104,6 +110,20 @@ async def generate_reply_and_save(
     )
 
     try:
+        recovered_reply = None
+        if operation_id is not None:
+            operation = await load_chat_operation(operation_id, customer_id, conversation_id)
+            if operation.reply is not None:
+                if on_text_delta:
+                    on_text_delta(operation.reply)
+                return operation.reply
+            # 工单事务可能已成功，聊天事务还未提交：先恢复真实回执，不再次调用模型。
+            ticket = await find_created_ticket(operation_id, customer_id, conversation_id)
+            if ticket is not None:
+                recovered_reply = build_ticket_creation_reply(ticket_creation_result(ticket))
+                if on_text_delta:
+                    on_text_delta(recovered_reply)
+
         # 3. 查询历史消息
         async with AsyncSessionLocal() as session:
             history_messages = await get_conversation_messages(
@@ -115,15 +135,21 @@ async def generate_reply_and_save(
 
         workflow_thread_id = str(uuid4())
         # 4. 调用 Qwen
-        reply = await generate_agent_reply(
-            message=message,
-            workflow_thread_id=workflow_thread_id,
-            history=history,
-            customer_id=customer_id,
-            image_observation=image_observation,
-            on_text_delta=on_text_delta,
-            conversation_id=conversation_id,
-        )
+        agent_context = {}
+        if operation_id is not None:
+            agent_context["ticket_idempotency_key"] = ticket_key(operation_id)
+        reply = recovered_reply
+        if reply is None:
+            reply = await generate_agent_reply(
+                message=message,
+                workflow_thread_id=workflow_thread_id,
+                history=history,
+                customer_id=customer_id,
+                image_observation=image_observation,
+                on_text_delta=on_text_delta,
+                conversation_id=conversation_id,
+                **agent_context,
+            )
 
         # 5. 如果续期已经失败，不继续保存
         if lease_lost_event.is_set():
@@ -156,6 +182,10 @@ async def generate_reply_and_save(
                     user_content=user_content,
                     assistant_content=reply,
                 )
+                if operation_id is not None:
+                    await complete_chat_operation(
+                        session, operation_id, customer_id, conversation_id, reply,
+                    )
         except ValueError as exc:
             if str(exc) == "会话处理权已失效":
                 raise ConversationLockExpiredError(

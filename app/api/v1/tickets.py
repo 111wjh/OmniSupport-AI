@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
@@ -22,6 +22,7 @@ from app.services.ticket_service import (
     create_customer_ticket,
     get_customer_ticket,
     list_customer_tickets,
+    TicketIdempotencyConflictError,
 )
 from app.models.ticket_message import TicketMessageSender
 from app.services.ticket_message_service import (
@@ -48,19 +49,38 @@ async def create_ticket(
         Customer,
         Depends(get_current_customer),
     ],
+    idempotency_key: Annotated[
+        str | None,
+        Header(
+            alias="Idempotency-Key",
+            min_length=1,
+            max_length=128,
+            pattern=r"^[A-Za-z0-9._:-]+$",
+        ),
+    ] = None,
 ) -> TicketResponse:
-    """为当前登录客户创建人工服务工单。"""
+    """创建工单；提供幂等键时，重复请求复用原工单。"""
+
+    if idempotency_key is not None and idempotency_key.startswith(("chat-operation:", "agent-run:")):
+        raise HTTPException(status_code=422, detail="该幂等键前缀由服务端保留，请使用其他键。")
 
     try:
         ticket = await create_customer_ticket(
             session=session,
             customer_id=current_customer.id,
             data=data,
+            idempotency_key=idempotency_key,
         )
 
     except TicketRelatedResourceNotFoundError as exc:
         raise HTTPException(
             status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except TicketIdempotencyConflictError as exc:
+        raise HTTPException(
+            status_code=409,
             detail=str(exc),
         ) from exc
 

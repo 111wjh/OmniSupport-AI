@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from openai import OpenAIError
 
 from app.services.multimodal_service import handle_multimodal_question
+from app.services.chat_idempotency import prepare_chat_operation, ChatIdempotencyConflictError
 
 from app.core.auth import get_current_customer
 from app.models.customer import Customer
@@ -104,6 +105,7 @@ async def upload_image(
         Depends(get_current_customer),
     ],
     conversation_id: Annotated[UUID | None, Form()] = None,
+    client_request_id: Annotated[UUID | None, Form()] = None,
 ):
     """接收并检查客户上传的图片。"""
 
@@ -152,10 +154,18 @@ async def upload_image(
         is_new_conversation = conversation_id is None
 
         try:
-            resolved_conversation_id = await resolve_conversation_id(
-                conversation_id,
-                customer_id=current_customer.id,
-            )
+            operation = None
+            if client_request_id is not None:
+                operation = await prepare_chat_operation(
+                    current_customer.id, client_request_id, question, conversation_id, content,
+                )
+                resolved_conversation_id = operation.conversation_id
+            else:
+                resolved_conversation_id = await resolve_conversation_id(
+                    conversation_id, customer_id=current_customer.id,
+                )
+        except ChatIdempotencyConflictError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(
                 status_code=404,
@@ -165,17 +175,22 @@ async def upload_image(
         # 调用多模态业务编排服务
 
         try:
-            result = await handle_multimodal_question(
-                image_bytes=content,
-                image_type=actual_type,
-                question=question,
-                conversation_id=resolved_conversation_id,
-                customer_id=current_customer.id,
-            )
+            if operation is not None and operation.reply is not None:
+                result = {"image_observation": operation.image_observation, "answer": operation.reply}
+            else:
+                context = {"operation_id": operation.id} if operation is not None else {}
+                result = await handle_multimodal_question(
+                    image_bytes=content,
+                    image_type=actual_type,
+                    question=question,
+                    conversation_id=resolved_conversation_id,
+                    customer_id=current_customer.id,
+                    **context,
+                )
 
         except Exception as exc:
             # 首次请求失败时，只清理本次创建的空会话
-            if is_new_conversation:
+            if is_new_conversation and operation is None:
                 try:
                     await delete_empty_conversation(
                         resolved_conversation_id

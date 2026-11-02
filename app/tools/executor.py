@@ -107,6 +107,7 @@ async def execute_tool(
     arguments: str,
     customer_id: UUID | None = None,
     conversation_id: UUID | None = None,
+    ticket_idempotency_key: str | None = None,
 ) -> dict:
     """统一执行 Agent 工具。"""
 
@@ -120,6 +121,7 @@ async def execute_tool(
             arguments=arguments,
             customer_id=customer_id,
             conversation_id=conversation_id,
+            idempotency_key=ticket_idempotency_key,
         )
 
     # 1. 执行知识库检索工具

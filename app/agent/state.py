@@ -24,3 +24,5 @@ class AgentState(TypedDict):
     conversation_id: NotRequired[UUID | None]
     # 根据本轮工单创建工具的实际结果生成的回复。
     ticket_creation_reply: NotRequired[str | None]
+    # 服务端生成，绝不从模型参数读取。
+    ticket_idempotency_key: NotRequired[str | None]
