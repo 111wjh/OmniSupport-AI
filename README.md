@@ -2,7 +2,7 @@
 
 **面向电商售后的多模态智能客服与业务执行助手。**
 
-以「咨询政策 → 查询订单 → 提交退款申请 → 人工审核 → 模拟退款 → 查询结果」为主线，将图像理解、RAG 知识检索、LangGraph Agent 和受权限约束的业务服务连接起来，并提供 Vue 客户工作台。
+以「咨询政策 → 查询订单 → 提交退款申请 → 人工审核 → 模拟退款 → 查询结果」为主线，将图像理解、RAG 知识检索、LangGraph Agent 和受权限约束的业务服务连接起来，并提供 Vue 客户与员工工作台。
 
 项目重点是 AI 应用后端与业务流程工程化：模型负责理解和选择工具，身份、订单归属、状态流转及数据库写入由服务端校验。当前为个人工程实践项目，退款执行是**数据库内的模拟流程，不涉及真实支付或资金转移**。
 
@@ -11,6 +11,15 @@
 ## 界面预览
 
 ![OmniSupport AI 客户工作台](frontend/docs/screenshots/workspace.jpg)
+
+![客户订单与售后](frontend/docs/screenshots/orders.png)
+
+![员工工单工作台](frontend/docs/screenshots/staff-tickets.png)
+
+新增业务页面支持订单详情与退款申请、退款进度与模拟执行记录、客户工单创建与沟通，以及员工登录、领取/回复/关闭工单、退款审核与单独模拟执行。顶部导航可进入各业务页面，员工入口为 `/#staff`；客户和员工凭据独立保存。已审核申请可通过申请 UUID 进入模拟执行，后端目前没有已审核队列接口。
+
+[项目完整讲解与面试准备](docs/PROJECT_GUIDE.md) · [前端操作与验证](frontend/docs/business-workspace.md)
+
 
 > 截图中的账号与会话为隔离模拟接口生成的演示数据；正式前端调用配置的真实后端。支持深色工作台、会话侧栏、Markdown 消息、图片附件和移动端抽屉。
 
@@ -30,17 +39,19 @@
 | 文字与图像客服 | 普通聊天、SSE 流式回复、商品图片观察与连续追问                                       |
 | 企业知识问答   | Markdown 分段、Embedding、Qdrant 稠密向量与 BM25 检索、RRF 融合、Rerank 重排         |
 | Agent 工具协作 | LangGraph 条件路由、本地工具、MCP 工具发现与调用、模型调用次数限制                   |
-| 订单与退款     | 查询本人订单、提交申请、查询审核状态与模拟执行结果；工作人员通过独立接口审核和执行   |
+| 订单与退款     | 查询本人订单、提交申请、查询审核状态与模拟执行结果；工作人员通过独立工作台审核和执行   |
 | 人工工单 | 客户通过 API 或 Agent 创建工单、关联本人订单和会话、客服领取、双方顺序回复、关闭及历史读取 |
 | 身份与权限     | 客户/员工独立账号、Argon2 密码哈希、JWT 身份类型校验、员工角色限制、客户数据归属检查 |
 | 会话与并发     | PostgreSQL 会话历史、稳定消息排序、分页、数据库租约、续期与处理权校验                |
 | 可观测性       | Request ID、接口耗时、模型/工具日志、Langfuse 观测、PostgreSQL Checkpointer          |
-| 客户工作台     | 注册登录、会话搜索与切换、新建对话、普通/流式发送、图片预览、复制与导出已加载消息    |
+| 客户工作台     | 注册登录、会话搜索与切换、文字/图片聊天、订单详情、退款申请/进度、人工工单及沟通 |
+| 员工工作台 | 独立身份登录、按角色展示工单领取/回复/关闭与退款审核/模拟执行 |
 
 ## 系统架构
 
 ```mermaid
 flowchart LR
+    StaffUI[Vue 员工工作台] --> API
     UI[Vue 客户工作台] --> API[FastAPI 接口与身份校验]
     API --> Chat[聊天服务：租约与历史]
     API --> Vision[图片校验与视觉观察]
@@ -233,7 +244,7 @@ python -m app.commands.create_demo_order
 .\.venv\Scripts\python.exe -m app.commands.create_staff
 ```
 
-退款审核与模拟执行使用 `refund_reviewer` 或 `admin`；人工工单处理使用 `customer_support` 或 `admin`。创建账号时设置自己的密码。客户 Token 与员工 Token 不能混用，员工功能当前通过 Swagger / Apifox 操作。
+退款审核与模拟执行使用 `refund_reviewer` 或 `admin`；人工工单处理使用 `customer_support` 或 `admin`。创建账号时设置自己的密码。客户 Token 与员工 Token 不能混用，员工功能可从前端顶部“员工入口”进入，也可通过 Swagger / Apifox 操作。
 
 ### 主要接口
 
@@ -256,7 +267,7 @@ python -m app.commands.create_demo_order
 
 ## 人工工单流程
 
-客户可以通过 API 或在聊天中明确请求 Agent 创建人工服务工单，关联本人订单和 AI 会话；客服或管理员从待领取队列领取工单，与客户沟通后关闭。工单查询、领取、回复和关闭通过 API 操作，尚未提供专门的工单前端页面。
+客户可以通过 API 或在聊天中明确请求 Agent 创建人工服务工单，关联本人订单和 AI 会话；客服或管理员从待领取队列领取工单，与客户沟通后关闭。工单查询、领取、回复和关闭通过 API 操作，前端已提供客户工单页和员工服务工作台。
 
 状态流转：`open`（待领取）→ `in_progress`（处理中）→ `closed`（已关闭）。
 
@@ -334,6 +345,8 @@ cd frontend
 npm run typecheck
 npm run build
 npm run format:check
+npm run test:chat-idempotency
+npm run test:business
 ```
 
 默认后端回归通过 Mock / 认证依赖替换隔离真实模型与数据库，覆盖会话创建/复用、参数校验、超时与连接错误、未登录拦截、处理权冲突、失效保存、续期和锁释放，以及 SSE 成功/错误事件。导入应用仍需配置合法的 `DATABASE_URL`，但测试不依赖真实数据库连接。
@@ -350,7 +363,7 @@ npm run format:check
 - Checkpointer 记录每轮工作流；当前每轮使用独立 workflow ID，对话连续性来自消息历史，不等同于已实现任意中断点的跨轮自动恢复。
 - 知识库为模拟售后资料；已有 5 题、4 种检索方案的 Ragas 对照试验，属于小样本试跑，尚无生产压测或完整覆盖率统计。
 - 原图片未持久化，未实现对象存储、上传扫描和图片历史恢复。
-- 员工审核和人工工单处理通过 API 完成；部署、CI/CD、监控告警和完整端到端业务回归仍待完善。
+- 员工审核和人工工单处理已提供前端入口；部署、CI/CD、监控告警和生产规模验证仍待完善。
 
 ## 代码导航
 
@@ -368,7 +381,7 @@ app/
 frontend/src/
 ├── api/                公共请求与业务接口
 ├── composables/        登录和聊天状态
-├── components/         客户工作台组件
+├── components/         客户与员工工作台、订单、退款和工单组件
 └── utils/              时间与历史文本处理
 migrations/             数据库版本迁移
 knowledge/              示例售后知识
@@ -376,3 +389,11 @@ tests/                  聊天接口与服务回归测试
 ```
 
 进一步阅读：[前端说明](frontend/README.md)、[前端代码导读](frontend/docs/前端代码导读.md)。
+
+## 本轮前端收尾验证
+
+新增客户/员工业务页面已通过 TypeScript 生产构建、Prettier 检查，以及基于隔离模拟接口的真实浏览器交互测试：订单详情与退款提交、工单创建、员工登录/领取/回复/关闭、审核/模拟执行、客户读取结果、角色导航、错误恢复和移动端无页面横向溢出。截图均为测试数据。
+
+`test:business` 默认使用已安装的 Windows Edge，通过 `EDGE_EXECUTABLE` 指定其他 Chromium 浏览器路径。这项测试验证前端交互与接口参数，不替代真实模型、支付或生产性能验证。既有聊天重试测试和后端回归继续保留。本轮未增加 Redis 或修改后端业务规则。
+
+功能开发进入收尾后的学习与展示阶段。项目的业务设计、调用链、并发幂等、RAG 实验和面试表达见 [PROJECT_GUIDE](docs/PROJECT_GUIDE.md)。

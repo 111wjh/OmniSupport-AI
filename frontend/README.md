@@ -1,4 +1,4 @@
-# OmniSupport AI · 客户工作台
+# OmniSupport AI · 客户与员工工作台
 
 Vue 3 + TypeScript + Vite 实现的多模态智能客服前端。现有 Python 后端保持在项目根目录的 `app/` 中。
 
@@ -54,3 +54,17 @@ npm run format:check
 类型检查和生产构建通过。浏览器功能验收使用独立本地模拟接口，未向真实订单或退款记录写入数据，验证登录错误、会话翻页与搜索、32 条历史记录连续加载、快速切换、普通与 SSE 聊天、SSE 错误处理、图片表单、刷新后恢复登录、Markdown 内容清理及手机抽屉布局。
 
 `docs/screenshots/` 的工作台截图使用模拟数据，仅用于展示界面。正式运行仍调用配置的真实后端；完整模型、知识库和业务工具联调需使用你的真实客户账号验证。
+
+## 业务工作台
+
+登录后顶部导航提供订单、退款和人工工单。员工入口位于右上角，或访问 /#staff。客户与员工凭据独立保存，员工入口根据 admin / customer_support / refund_reviewer 展示业务菜单；服务端继续校验角色和资源归属。
+
+操作与维护分工见 [业务工作台说明](docs/business-workspace.md)。完整项目架构与面试讲解见 [项目手册](../docs/PROJECT_GUIDE.md)。
+
+浏览器模拟交互检查：
+
+```powershell
+npm run test:business
+```
+
+测试默认使用本机 Edge（不使用个人浏览器资料），支持通过 EDGE_EXECUTABLE 指定 Chromium 路径。全部接口在测试中模拟，不会操作真实业务数据库。测试截图保存在 docs/screenshots/。
