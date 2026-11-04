@@ -5,7 +5,7 @@ from typing import Any
 from app.core.config import get_settings
 from app.rag.bootstrap import build_knowledge_retriever
 from app.rag.contracts import RetrievalRequest
-
+from app.rag.ranking import serialize_hybrid_hits
 
 async def retrieve_relevant_knowledge(
     question: str,
@@ -44,14 +44,4 @@ async def retrieve_relevant_knowledge(
     retriever = build_knowledge_retriever()
     hits = await retriever.retrieve(request)
 
-    # 旧调用方仍使用字典，因此在这个边界转换格式。
-    return [
-        {
-            "text": hit.text,
-            "source": hit.source,
-            "chunk_index": hit.chunk_index,
-            "hybrid_score": hit.retrieval_score,
-            "rerank_score": hit.rerank_score,
-        }
-        for hit in hits
-    ]
+    return serialize_hybrid_hits(hits)

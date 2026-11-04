@@ -5,7 +5,7 @@ from app.services.qdrant_service import (
     search_knowledge,
 )
 from app.services.rerank_service import rerank_documents
-
+from app.rag.ranking import build_ranked_hits, serialize_hybrid_hits
 
 async def retrieve_for_comparison(
     question: str,
@@ -59,19 +59,8 @@ async def retrieve_for_comparison(
         top_n=top_k,
     )
 
-    reranked = []
-
-    for item in ranked:
-        original = hybrid_candidates[item["index"]]
-
-        reranked.append({
-            "text": original["text"],
-            "source": original["source"],
-            "chunk_index": original["chunk_index"],
-            "hybrid_score": original["score"],
-            "rerank_score": item["score"],
-        })
-
+    hits = build_ranked_hits(hybrid_candidates, ranked)
+    reranked = serialize_hybrid_hits(hits)
     return {
         "bm25": bm25_candidates[:top_k],
         "dense": dense_candidates[:top_k],

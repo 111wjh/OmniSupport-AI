@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable
 from typing import Protocol
 
 from app.rag.contracts import KnowledgeHit, RetrievalRequest
-
+from app.rag.ranking import build_ranked_hits
 class HybridSearch(Protocol):
     async def __call__(
         self,
@@ -69,19 +69,4 @@ class HybridRerankRetriever:
         )
 
         # 4. 将底层返回的数据转换为统一结果。
-        results: list[KnowledgeHit] = []
-
-        for item in ranked:
-            original = candidates[item["index"]]
-
-            results.append(
-                KnowledgeHit(
-                    text=original["text"],
-                    source=original["source"],
-                    chunk_index=original["chunk_index"],
-                    retrieval_score=original["score"],
-                    rerank_score=item["score"],
-                )
-            )
-
-        return results
+        return build_ranked_hits(candidates, ranked)
