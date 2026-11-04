@@ -7,35 +7,7 @@ from app.tools.registry import registered_tool_definitions
 
 
 
-LIST_MY_REFUNDS_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "list_my_refunds",
-        "description": (
-            "查询当前已认证客户自己的退款申请列表。"
-            "当客户询问退款申请进度、历史退款申请或审核状态时使用。"
-            "必须由后端根据已认证的客户 ID 限定查询范围。"
-            "不得查询其他客户的退款申请。"
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer",
-                    "description": "最多返回的记录数，范围为 1 到 100，默认 20。",
-                    "minimum": 1,
-                    "maximum": 100,
-                },
-                "offset": {
-                    "type": "integer",
-                    "description": "分页跳过的记录数，默认 0。",
-                    "minimum": 0,
-                },
-            },
-            "additionalProperties": False,
-        },
-    },
-}
+
 
 
 SUBMIT_REFUND_REQUEST_TOOL = {
@@ -75,34 +47,7 @@ SUBMIT_REFUND_REQUEST_TOOL = {
     },
 }
 
-GET_REFUND_EXECUTION_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "get_refund_execution",
-        "description": (
-            "查询当前已认证客户自己的退款执行结果。"
-            "当客户询问退款是否执行成功时使用。"
-            "需要退款申请编号，可先通过 list_my_refunds 获取。"
-            "审核通过不代表退款执行成功。"
-            "当前系统执行的是模拟退款，"
-            "即使返回 succeeded，也不能声称真实资金已经到账。"
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "refund_request_id": {
-                    "type": "string",
-                    "description": (
-                        "退款申请的 UUID，"
-                        "不是订单编号，也不是退款执行记录编号。"
-                    ),
-                },
-            },
-            "required": ["refund_request_id"],
-            "additionalProperties": False,
-        },
-    },
-}
+
 
 CREATE_SUPPORT_TICKET_TOOL = {
     "type": "function",
@@ -125,8 +70,6 @@ CREATE_SUPPORT_TICKET_TOOL = {
 }
 AGENT_TOOLS = [
     *registered_tool_definitions(),
-    LIST_MY_REFUNDS_TOOL,
     SUBMIT_REFUND_REQUEST_TOOL,
-    GET_REFUND_EXECUTION_TOOL,
     CREATE_SUPPORT_TICKET_TOOL,
 ]
