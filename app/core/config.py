@@ -1,6 +1,6 @@
 from functools import lru_cache
 from pydantic_settings import BaseSettings,SettingsConfigDict
-
+from pydantic import Field
 #Settings 继承 BaseSettings 后，就能从环境变量读取同名配置，并自动校验数据类型。
 class Settings(BaseSettings):
      # FastAPI 基础配置
@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     # Qdrant 向量数据库配置
     QDRANT_URL: str = "http://127.0.0.1:6333"
     QDRANT_API_KEY: str | None = None
+    # 知识检索配置
+    EMBEDDING_MODEL: str = "qwen3.7-text-embedding-flash"
+    RERANK_MODEL: str = "qwen3.7-text-rerank"
+    KNOWLEDGE_COLLECTION: str = "omnisupport_knowledge"
+
+    # 融合检索的候选数量，以及重排后的返回数量
+    RAG_RECALL_K: int = Field(default=5, ge=1)
+    RAG_TOP_N: int = Field(default=3, ge=1)
     model_config = SettingsConfigDict(
         env_file=".env", 
         env_file_encoding="utf-8",

@@ -26,7 +26,7 @@ async def rerank_documents(
     top_n = max(1, min(top_n, len(documents)))
 
     payload = {
-        "model": "qwen3.7-text-rerank",
+        "model":settings.RERANK_MODEL,
         "input": {
             "query": query,
             "documents": documents,

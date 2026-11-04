@@ -138,11 +138,7 @@ async def execute_tool(
             }
 
         try:
-            results = await retrieve_relevant_knowledge(
-                question=args.query,
-                recall_k=5,
-                top_n=3,
-            )
+            results = await retrieve_relevant_knowledge(question=args.query)
         except Exception:
             logger.exception("Knowledge search failed")
             return {

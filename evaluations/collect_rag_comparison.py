@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 
-from app.services.embedding_service import EMBEDDING_MODEL
+from app.core.config import get_settings
 from evaluations.retrievers import retrieve_for_comparison
 
 
@@ -37,6 +37,7 @@ def save_report(report: dict) -> None:
 
 
 async def main() -> None:
+    settings = get_settings()
     raw = DATASET_PATH.read_bytes()
     dataset = json.loads(raw.decode("utf-8-sig"))
     corpus = json.loads(
@@ -50,10 +51,10 @@ async def main() -> None:
         "dataset_sha256": hashlib.sha256(raw).hexdigest(),
         "corpus_sha256": corpus["corpus_sha256"],
         "collection": dataset["collection"],
-        "embedding_model": EMBEDDING_MODEL,
-        "rerank_model": "qwen3.7-text-rerank",
-        "recall_k": RECALL_K,
-        "top_k": TOP_K,
+        "embedding_model": settings.EMBEDDING_MODEL,
+        "rerank_model": settings.RERANK_MODEL,
+        "recall_k": settings.RAG_RECALL_K,
+        "top_k": settings.RAG_TOP_N,
         "methods": METHODS,
     }
 

@@ -1,62 +1,57 @@
+"""兼容现有调用方的知识检索入口。"""
 
-from app.services.embedding_service import embed_texts
-from app.services.qdrant_service import search_hybrid_knowledge
-from app.services.rerank_service import rerank_documents
+from typing import Any
+
+from app.core.config import get_settings
+from app.rag.bootstrap import build_knowledge_retriever
+from app.rag.contracts import RetrievalRequest
 
 
 async def retrieve_relevant_knowledge(
     question: str,
-    recall_k: int = 5,
-    top_n: int = 3,
+    recall_k: int | None = None,
+    top_n: int | None = None,
     *,
-    collection_name: str = "omnisupport_knowledge",
-) -> list[dict]:
-    """通过混合检索、RRF 融合和 Rerank 获取相关企业知识。"""
+    collection_name: str | None = None,
+) -> list[dict[str, Any]]:
+    """调用新检索实现，暂时保持原有字典返回格式。"""
 
+    # 保留旧入口对空问题的处理方式。
     if not question.strip():
         return []
 
-    # 1. 将用户问题转换成向量，供向量检索使用
-    query_vectors = await embed_texts([question])
-    query_vector = query_vectors[0]
+    settings = get_settings()
 
-    # 2. 同时执行 BM25 和向量检索，并通过 RRF 融合结果
-    candidates = await search_hybrid_knowledge(
-        query_text=question,
-        query_vector=query_vector,
-        recall_k=recall_k,
-        top_k=recall_k,
-        collection_name=collection_name,
-    )
-
-    if not candidates:
-        return []
-
-    # 3. 提取融合检索得到的候选知识正文
-    documents = [
-        candidate["text"]
-        for candidate in candidates
-    ]
-
-    # 4. 使用 Reranker 对候选知识重新排序
-    ranked = await rerank_documents(
+    request = RetrievalRequest(
         query=question,
-        documents=documents,
-        top_n=top_n,
+        collection_name=(
+            settings.KNOWLEDGE_COLLECTION
+            if collection_name is None
+            else collection_name
+        ),
+        recall_k=(
+            settings.RAG_RECALL_K
+            if recall_k is None
+            else recall_k
+        ),
+        top_n=(
+            settings.RAG_TOP_N
+            if top_n is None
+            else top_n
+        ),
     )
 
-    # 5. 根据 Reranker 返回的原始索引找回知识信息
-    results = []
+    retriever = build_knowledge_retriever()
+    hits = await retriever.retrieve(request)
 
-    for item in ranked:
-        original = candidates[item["index"]]
-
-        results.append({
-            "text": original["text"],
-            "source": original["source"],
-            "chunk_index": original["chunk_index"],
-            "hybrid_score": original["score"],
-            "rerank_score": item["score"],
-        })
-
-    return results
+    # 旧调用方仍使用字典，因此在这个边界转换格式。
+    return [
+        {
+            "text": hit.text,
+            "source": hit.source,
+            "chunk_index": hit.chunk_index,
+            "hybrid_score": hit.retrieval_score,
+            "rerank_score": hit.rerank_score,
+        }
+        for hit in hits
+    ]

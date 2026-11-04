@@ -24,11 +24,7 @@ async def answer_with_knowledge(
         )
 
     # 使用图文信息检索企业知识
-    knowledge = await retrieve_relevant_knowledge(
-        question=retrieval_query,
-        recall_k=5,
-        top_n=3,
-    )
+    knowledge = await retrieve_relevant_knowledge(question=retrieval_query)
 
 
     return await generate_answer_from_knowledge(

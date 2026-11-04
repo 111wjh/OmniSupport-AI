@@ -15,7 +15,7 @@ from uuid import NAMESPACE_URL, uuid5
 from qdrant_client import AsyncQdrantClient
 
 from app.core.config import get_settings
-from app.services.embedding_service import EMBEDDING_MODEL, embed_texts
+from app.services.embedding_service import embed_texts
 from app.services.knowledge_service import split_markdown_sections
 from app.services.qdrant_initializer import (
     COLLECTION_NAME,
@@ -74,8 +74,9 @@ def collect_documents(input_path: Path) -> list[KnowledgeDocument]:
 
 def describe_corpus(documents: list[KnowledgeDocument]) -> dict:
     """指纹覆盖来源、正文、切分数量和模型，供评测固定数据版本。"""
+    settings = get_settings()
     description = {
-        "embedding_model": EMBEDDING_MODEL,
+        "embedding_model": settings.EMBEDDING_MODEL,
         "vector_size": VECTOR_SIZE,
         "chunker": "markdown_h2_v1",
         "documents": [
