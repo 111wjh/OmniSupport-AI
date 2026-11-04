@@ -1,10 +1,10 @@
-from app.services.embedding_service import embed_texts
+from app.rag.adapters.embedding import embed_texts
 from app.rag.adapters.qdrant import (
     search_bm25_knowledge,
     search_hybrid_knowledge,
     search_knowledge,
 )
-from app.services.rerank_service import rerank_documents
+from app.rag.adapters.reranker import rerank_documents
 from app.rag.ranking import build_ranked_hits, serialize_hybrid_hits
 
 async def retrieve_for_comparison(

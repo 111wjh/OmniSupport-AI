@@ -131,7 +131,7 @@ Agent 可提交退款申请，但不能使用客户身份审核申请或执行�
 默认召回 5 条、重排返回 3 条；保留来源与片段编号。示例知识库为 [售后政策文档](knowledge/after_sales_policy.md)。这是一条已实现的检索链路，当前没有用量化评测证明其优于其他检索配置。
 
 MCP Server 提供演示商品信息；Client 动态发现工具并转换成模型工具定义。工具白名单、发现缓存、失败短期缓存和超时控制用于限制暴露范围及避免反复启动发现进程。业务写工具保留在本地服务端校验路径中。
-
+0
 入口代码：[RAG](app/services/rag_service.py)、[Qdrant 查询](app/rag/adapters/qdrant.py)、[MCP 工具目录](app/mcp_client/catalog.py)、[MCP Server](app/mcp_server/server.py)。
 
 ### 4. 流式输出的完成语义
@@ -156,7 +156,7 @@ MCP Server 提供演示商品信息；Client 动态发现工具并转换成模�
 - PostgreSQL：需有应用数据库，以及迁移和 Checkpointer 初始化所需的建表权限。
 - Qdrant：服务端需支持当前代码使用的多语言全文索引、BM25 评分、`TextQuery` 与 RRF；不要默认使用缺少这些接口的旧版本服务。
 - 模型服务：兼容 OpenAI Chat Completions / Embeddings，并支持工具调用、视觉输入和流式输出。
-- Rerank 服务：与 [rerank_service.py](app/services/rerank_service.py) 的请求/响应格式兼容。
+- Rerank 服务：与 [reranker.py](app/rag/adapters/reranker.py) 的请求/响应格式兼容。
 - Langfuse：用于观测，连接参数通过环境变量提供；本仓库不包含该服务的部署。
 
 当前 Embedding 与 Rerank 实现分别固定使用 `qwen3.7-text-embedding-flash`、`qwen3.7-text-rerank`，向量集合为 **1024 维**。复现时需确认账号、地域、接口和模型支持情况；更换模型时同步检查这些服务文件与集合维度。

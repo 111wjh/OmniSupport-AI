@@ -8,7 +8,7 @@ from qdrant_client import AsyncQdrantClient
 
 from app.core.config import get_settings
 from app.rag.corpus import KnowledgeDocument
-from app.services.embedding_service import embed_texts
+from app.rag.adapters.embedding import embed_texts
 from app.services.qdrant_initializer import VECTOR_SIZE, init_qdrant_collection
 from app.rag.adapters.qdrant import upsert_knowledge_chunks
 
