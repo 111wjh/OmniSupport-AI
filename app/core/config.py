@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     # 融合检索的候选数量，以及重排后的返回数量
     RAG_RECALL_K: int = Field(default=5, ge=1)
     RAG_TOP_N: int = Field(default=3, ge=1)
+    REDIS_URL: str | None = None
+    RAG_EMBED_CACHE_TTL_SECONDS: int = Field(default=3600, ge=1)
     model_config = SettingsConfigDict(
         env_file=".env", 
         env_file_encoding="utf-8",
