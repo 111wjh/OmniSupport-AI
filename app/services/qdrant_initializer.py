@@ -4,16 +4,17 @@ import asyncio
 from app.core.config import get_settings
 
 
-COLLECTION_NAME = "omnisupport_knowledge"
 VECTOR_SIZE = 1024
 
 
 async def init_qdrant_collection(
-    collection_name: str = COLLECTION_NAME,
+    collection_name: str | None = None,
 ) -> None:
     """初始化 Qdrant 集合和 BM25 全文索引。"""
-
     settings = get_settings()
+
+    if collection_name is None:
+        collection_name = settings.KNOWLEDGE_COLLECTION
 
     client = AsyncQdrantClient(
         url=settings.QDRANT_URL,
