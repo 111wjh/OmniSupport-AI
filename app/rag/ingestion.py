@@ -10,7 +10,7 @@ from app.core.config import get_settings
 from app.rag.corpus import KnowledgeDocument
 from app.services.embedding_service import embed_texts
 from app.services.qdrant_initializer import VECTOR_SIZE, init_qdrant_collection
-from app.services.qdrant_service import upsert_knowledge_chunks
+from app.rag.adapters.qdrant import upsert_knowledge_chunks
 
 def expected_payloads(documents: list[KnowledgeDocument]) -> dict[str, dict]:
     return {

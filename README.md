@@ -132,7 +132,7 @@ Agent 可提交退款申请，但不能使用客户身份审核申请或执行�
 
 MCP Server 提供演示商品信息；Client 动态发现工具并转换成模型工具定义。工具白名单、发现缓存、失败短期缓存和超时控制用于限制暴露范围及避免反复启动发现进程。业务写工具保留在本地服务端校验路径中。
 
-入口代码：[RAG](app/services/rag_service.py)、[Qdrant 查询](app/services/qdrant_service.py)、[MCP 工具目录](app/mcp_client/catalog.py)、[MCP Server](app/mcp_server/server.py)。
+入口代码：[RAG](app/services/rag_service.py)、[Qdrant 查询](app/rag/adapters/qdrant.py)、[MCP 工具目录](app/mcp_client/catalog.py)、[MCP Server](app/mcp_server/server.py)。
 
 ### 4. 流式输出的完成语义
 

@@ -3,7 +3,7 @@
 from app.rag.contracts import KnowledgeRetriever
 from app.rag.pipeline import HybridRerankRetriever
 from app.services.embedding_service import embed_texts
-from app.services.qdrant_service import search_hybrid_knowledge
+from app.rag.adapters.qdrant import search_hybrid_knowledge
 from app.services.rerank_service import rerank_documents
 
 

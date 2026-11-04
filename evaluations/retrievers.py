@@ -1,5 +1,5 @@
 from app.services.embedding_service import embed_texts
-from app.services.qdrant_service import (
+from app.rag.adapters.qdrant import (
     search_bm25_knowledge,
     search_hybrid_knowledge,
     search_knowledge,

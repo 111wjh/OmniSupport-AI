@@ -5,6 +5,22 @@ from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.models import PointStruct
 from app.core.config import get_settings
 
+def _points_to_results(points: list[models.ScoredPoint]) -> list[dict]:
+    """将 Qdrant 查询结果转换成项目使用的字典。"""
+    results = []
+
+    for point in points:
+        payload = point.payload or {}
+        results.append(
+            {
+                "score": point.score,
+                "text": payload.get("text", ""),
+                "source": payload.get("source", ""),
+                "chunk_index": payload.get("chunk_index"),
+            }
+        )
+
+    return results
 
 async def upsert_knowledge_chunks(
     chunks: list[str],
@@ -84,19 +100,7 @@ async def search_knowledge(
     finally:
         await client.close()
 
-    results = []
-
-    for point in response.points:
-        payload = point.payload or {}
-
-        results.append({
-            "score": point.score,
-            "text": payload.get("text", ""),
-            "source": payload.get("source", ""),
-            "chunk_index": payload.get("chunk_index"),
-        })
-
-    return results
+    return _points_to_results(response.points)
 
 
 
@@ -151,19 +155,7 @@ async def search_hybrid_knowledge(
     finally:
         await client.close()
 
-    results = []
-
-    for point in response.points:
-        payload = point.payload or {}
-
-        results.append({
-            "score": point.score,
-            "text": payload.get("text", ""),
-            "source": payload.get("source", ""),
-            "chunk_index": payload.get("chunk_index"),
-        })
-
-    return results
+    return _points_to_results(response.points)
 
 
 async def search_bm25_knowledge(
@@ -198,16 +190,4 @@ async def search_bm25_knowledge(
     finally:
         await client.close()
 
-    results = []
-
-    for point in response.points:
-        payload = point.payload or {}
-
-        results.append({
-            "score": point.score,
-            "text": payload.get("text", ""),
-            "source": payload.get("source", ""),
-            "chunk_index": payload.get("chunk_index"),
-        })
-
-    return results
+    return _points_to_results(response.points)
