@@ -218,6 +218,7 @@ app = CORSMiddleware(
         "Authorization",
         "Content-Type",
         "X-Request-ID",
+        "Idempotency-Key",
     ],
     expose_headers=["X-Request-ID"],
 )
