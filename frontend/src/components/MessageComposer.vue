@@ -17,7 +17,7 @@ const file = ref<File | null>(null)
 const preview = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
 const textarea = ref<HTMLTextAreaElement | null>(null)
-const stream = ref(true)
+const stream = ref(false)
 const error = ref('')
 const limit = computed(() => (file.value ? 1000 : 2000))
 const blocked = computed(() => props.busy || props.disabled)
@@ -155,9 +155,10 @@ defineExpose({ setDraft, openImagePicker })
             :class="{ active: stream && !file }"
             :aria-pressed="stream && !file"
             :disabled="blocked || !!file"
+            :title="file ? '使用图片分析' : stream ? '切换到普通回复' : '切换到流式回复'"
             @click="stream = !stream"
           >
-            <Radio :size="14" />{{ file ? '图片分析' : '流式回复'
+            <Radio :size="14" />{{ file ? '图片分析' : stream ? '流式回复' : '普通回复'
             }}<span class="toggle-indicator"></span>
           </button>
         </div>

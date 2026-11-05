@@ -12,6 +12,15 @@ const browser = await chromium.launch({
 const id = '00000000-0000-4000-8000-000000000001',
   rid = '00000000-0000-4000-8000-000000000002',
   tid = '00000000-0000-4000-8000-000000000003'
+const chatHistory = new Map()
+const refundQuestion = '请从系统查询我最近的两笔退款申请，告诉我申请编号和审核状态。'
+const chatReply = '已查询到一笔退款申请，当前待审核。'
+const createdAt = '2026-11-02T10:00:00+08:00'
+async function screenshot(page, filename) {
+  if (process.env.UPDATE_BUSINESS_SCREENSHOTS !== '1') return
+  await mkdir('docs/screenshots', { recursive: true })
+  await page.screenshot({ path: 'docs/screenshots/' + filename, fullPage: true })
+}
 let ticket = null,
   refund = null,
   seq = 0,
@@ -48,6 +57,33 @@ await context.route('**/*', async (route) => {
   if (p === '/api/v1/staff/login') return ok({ access_token: 'test-staff', token_type: 'bearer' })
   if (p === '/api/v1/staff/me') return ok({ ...staff, role })
   if (p === '/api/v1/conversations') return ok(list([]))
+  if (p.startsWith('/api/v1/conversations/') && p.endsWith('/messages')) {
+    const conversationId = p.split('/')[4]
+    return ok({ conversation_id: conversationId, ...list(chatHistory.get(conversationId) || []) })
+  }
+  if (p === '/api/v1/chat' || p === '/api/v1/chat/stream') {
+    const input = request.postDataJSON()
+    assert.equal(input.message, refundQuestion)
+    assert.equal(input.conversation_id, null)
+    assert.ok(input.client_request_id)
+    const conversationId = crypto.randomUUID()
+    chatHistory.set(conversationId, [
+      { id: crypto.randomUUID(), role: 'user', content: input.message, created_at: createdAt },
+      { id: crypto.randomUUID(), role: 'assistant', content: chatReply, created_at: createdAt },
+    ])
+    if (p === '/api/v1/chat') return ok({ reply: chatReply, conversation_id: conversationId })
+    return route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body:
+        'event: token\ndata: ' +
+        JSON.stringify({ content: chatReply }) +
+        '\n\n' +
+        'event: done\ndata: ' +
+        JSON.stringify({ conversation_id: conversationId }) +
+        '\n\n',
+    })
+  }
   if (p.startsWith('/api/v1/orders'))
     return failOrders
       ? ok({ detail: '测试：订单服务暂时不可用' }, 503)
@@ -63,10 +99,16 @@ await context.route('**/*', async (route) => {
     return ok(refund, 201)
   }
   if (p === '/api/v1/refunds') return ok(list(refund ? [refund] : []))
-  if (p === '/api/v1/refunds/pending')
+  if (p === '/api/v1/refunds/pending' || p === '/api/v1/refunds/ready-to-execute') {
+    assert.equal(request.headers().authorization, 'Bearer test-staff')
+    assert.equal(url.searchParams.get('limit'), '10')
+    assert.equal(url.searchParams.get('offset'), '0')
+    const visible = p.endsWith('/pending')
+      ? refund?.status === 'pending'
+      : refund?.status === 'approved' && orderStatus !== 'refunded'
     return ok(
       list(
-        refund?.status === 'pending'
+        visible
           ? [
               {
                 ...refund,
@@ -78,6 +120,7 @@ await context.route('**/*', async (route) => {
           : [],
       ),
     )
+  }
   if (p.endsWith('/review')) {
     refund = {
       ...refund,
@@ -87,7 +130,12 @@ await context.route('**/*', async (route) => {
     return ok(refund)
   }
   if (p.endsWith('/execute') || p.endsWith('/execution')) {
-    orderStatus = 'refunded'
+    if (p.endsWith('/execute')) {
+      assert.equal(p, '/api/v1/refunds/' + rid + '/execute')
+      assert.equal(request.headers().authorization, 'Bearer test-staff')
+      assert.equal(refund?.status, 'approved')
+      orderStatus = 'refunded'
+    }
     return ok({
       id,
       refund_request_id: rid,
@@ -98,6 +146,8 @@ await context.route('**/*', async (route) => {
   }
   if (p === '/api/v1/tickets' && request.method() === 'POST') {
     assert.ok(request.headers()['idempotency-key'])
+    assert.equal(request.postDataJSON().conversation_id, null)
+    assert.equal(request.postDataJSON().order_number, null)
     ticket = {
       ...request.postDataJSON(),
       id: tid,
@@ -145,21 +195,41 @@ const page = await context.newPage()
 const { expect } = await import('@playwright/test')
 try {
   await page.goto('http://127.0.0.1:5188')
+  await expect(page.getByRole('button', { name: '普通回复', exact: true })).toBeVisible()
+  await page.getByLabel('输入你的问题').fill(refundQuestion)
+  await page.getByRole('button', { name: '发送消息' }).click()
+  await expect(page.getByText(chatReply, { exact: true })).toBeVisible()
+  assert.equal(requests.filter((request) => request.p === '/api/v1/chat').length, 1)
+  await page.getByRole('button', { name: /开启新对话/ }).click()
+  await page.getByRole('button', { name: '普通回复', exact: true }).click()
+  await expect(page.getByRole('button', { name: '流式回复', exact: true })).toBeVisible()
+  await page.getByLabel('输入你的问题').fill(refundQuestion)
+  await page.getByRole('button', { name: '发送消息' }).click()
+  await expect(page.getByText(chatReply, { exact: true })).toBeVisible()
+  assert.equal(requests.filter((request) => request.p === '/api/v1/chat/stream').length, 1)
   await page.getByRole('button', { name: '我的订单', exact: true }).click()
   await expect(page.getByText('蓝牙无线耳机 Pro（模拟）', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '查看详情与售后' }).click()
   await page.getByLabel('退款原因').fill('演示商品不符合使用需求')
   await page.getByRole('button', { name: '提交退款申请', exact: true }).click()
   await expect(page.getByText(/退款申请已提交，申请编号/)).toBeVisible()
-  await mkdir('docs/screenshots', { recursive: true })
-  await page.screenshot({ path: 'docs/screenshots/orders.png', fullPage: true })
+  await screenshot(page, 'orders.png')
   await page.getByRole('button', { name: '退款进度', exact: true }).click()
   await expect(page.getByText('待处理', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '人工工单', exact: true }).click()
   await page.getByRole('button', { name: /新建工单/ }).click()
   await page.getByLabel('问题标题').fill('电脑蓝牙连接排查')
+  const createTicketButton = page.getByRole('button', { name: '提交工单', exact: true })
+  await page.getByLabel('问题描述').fill('我')
+  await expect(page.getByText('至少填写 5 个字符（当前 1 个）。')).toBeVisible()
+  await expect(createTicketButton).toBeDisabled()
   await page.getByLabel('问题描述').fill('耳机连接电脑失败，希望人工客服协助排查。')
-  await page.getByRole('button', { name: '提交工单', exact: true }).click()
+  await page.getByLabel('关联会话编号（可选）').fill('我')
+  await expect(page.getByText('会话编号格式不正确，请粘贴完整 UUID 或留空。')).toBeVisible()
+  await expect(createTicketButton).toBeDisabled()
+  await page.getByLabel('关联会话编号（可选）').clear()
+  await expect(createTicketButton).toBeEnabled()
+  await createTicketButton.click()
   await expect(page.getByText(/工单已创建，编号/)).toBeVisible()
   await page.getByRole('button', { name: '员工入口' }).click()
   await page.getByLabel('员工邮箱').fill('staff@example.com')
@@ -173,7 +243,7 @@ try {
     page.getByText('已收到问题，请先确认电脑蓝牙是否开启。', { exact: true }),
   ).toBeVisible()
   await page.locator('.service-desk').evaluate((el) => (el.scrollTop = 0))
-  await page.screenshot({ path: 'docs/screenshots/staff-tickets.png', fullPage: true })
+  await screenshot(page, 'staff-tickets.png')
   await page.getByRole('button', { name: '关闭此工单' }).click()
   await expect(page.getByText('工单已关闭，沟通记录已保留。', { exact: true })).toBeVisible()
   await expect(page.getByLabel('补充回复')).toHaveCount(0)
@@ -181,10 +251,17 @@ try {
   await page.getByRole('button', { name: '审核此申请' }).click()
   await page.getByLabel('审核意见').fill('演示审核通过，进入模拟执行。')
   await page.getByRole('button', { name: '审核通过', exact: true }).click()
-  await expect(page.getByLabel('退款申请编号')).toHaveValue(rid)
-  await page.getByRole('button', { name: '执行模拟退款', exact: true }).click()
+  await expect(page.getByText('审核通过。请到待执行队列核对并执行模拟退款。')).toBeVisible()
+  await expect(page.getByRole('button', { name: '审核此申请' })).toHaveCount(0)
+  await page.getByRole('button', { name: '待执行队列', exact: true }).click()
+  await page.getByRole('button', { name: /选择执行/ }).click()
+  await expect(page.getByRole('heading', { name: '核对并执行模拟退款' })).toBeVisible()
+  assert.equal(requests.filter((request) => request.p.endsWith('/execute')).length, 0)
+  await page.getByRole('button', { name: '确认模拟退款', exact: true }).click()
   await expect(page.getByText(/执行成功 · ¥99.00/)).toBeVisible()
-  await page.screenshot({ path: 'docs/screenshots/staff-refunds.png', fullPage: true })
+  await expect(page.getByText('暂无待执行的退款申请。')).toBeVisible()
+  await expect(page.getByRole('button', { name: /选择执行/ })).toHaveCount(0)
+  await screenshot(page, 'staff-refunds.png')
   await page.getByRole('button', { name: '客户入口', exact: true }).click()
   await page.getByRole('button', { name: '退款进度', exact: true }).click()
   await page.getByRole('button', { name: '查询模拟执行结果' }).click()
@@ -196,7 +273,7 @@ try {
   ).toBeVisible()
   await expect(page.getByLabel('补充回复')).toHaveCount(0)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.screenshot({ path: 'docs/screenshots/business-mobile.png', fullPage: true })
+  await screenshot(page, 'business-mobile.png')
   assert.ok(
     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
     '移动端页面横向溢出',
@@ -218,7 +295,7 @@ try {
       .every((r) => r.headers.authorization === 'Bearer test-staff'),
   )
   console.log(
-    'Business UI passed: orders/refund submission; ticket creation; staff login/claim/reply/close; review/execute; customer history; mobile layout; failure recovery; role navigation/token isolation.',
+    'Business UI passed: chat modes; orders/refund submission; ticket validation and creation; staff claim/reply/close; refund execution queue; customer history; mobile layout; failure recovery; role/token isolation.',
   )
 } finally {
   await browser.close()

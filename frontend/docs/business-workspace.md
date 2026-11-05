@@ -7,7 +7,7 @@
 员工账号由后端 create_staff 命令创建，没有公开员工注册页面。
 
 - customer_support：待领取队列、我的工单、沟通记录、回复和关闭。
-- refund_reviewer：退款待审队列、审核通过/拒绝、模拟执行。
+- refund_reviewer：待审核和待执行队列、审核通过/拒绝、模拟执行。
 - admin：两类入口。
 - 客户与员工 Token 使用独立 sessionStorage 键。客户端角色显示只用于导航，服务端继续决定实际权限。
 
@@ -22,7 +22,7 @@
 
 ### 客户工单
 
-填写标题和至少 5 字的问题说明，可关联本人订单号及会话 UUID。
+填写标题和至少 5 字的问题说明，页面会提示当前字数。关联本人订单号和会话 UUID 均为可选。
 创建使用 Idempotency-Key，失败后相同输入保留请求号，成功后清理。
 状态筛选及分页由后端执行。打开工单后可分页读历史、追加回复。
 已关闭工单只展示历史。
@@ -37,8 +37,12 @@
 ### 退款审核
 
 待审核列表展示订单号、客户、金额和原因。填写审核意见后选择通过或拒绝。
-通过后将申请编号放入模拟执行表单，工作人员核对后单独执行。
-其他已审核申请可粘贴 UUID 执行。当前接口未提供已审核队列，不在前端假造该列表。
+审核通过后，切到待执行队列。列表从 `GET /api/v1/refunds/ready-to-execute` 读取。
+点击「选择执行」，核对订单、金额和申请编号，再点「确认模拟退款」。执行成功后刷新队列并显示模拟执行记录。
+
+### 聊天回复方式
+
+网页文字聊天默认使用普通回复，与 Apifox 的普通聊天接口一致。点击输入框旁的模式按钮可以切换流式回复，页面会显示当前选中的方式。
 
 ## 维护分工
 
@@ -60,7 +64,7 @@ npm run test:chat-idempotency
 npm run test:business
 ```
 
-test:business 启动独立 Vite 测试服务和无头 Edge，通过内存模拟 API 完成业务闭环，并产生 screenshots 下的业务页面截图。它不写入业务数据库，也不发送真实模型调用。
+test:business 启动独立 Vite 测试服务和无头 Edge，通过内存模拟 API 验证业务闭环。设置 UPDATE_BUSINESS_SCREENSHOTS=1 时会更新 screenshots 下的业务截图。测试使用模拟业务数据和模型回复。
 
 默认 Edge 路径为 C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe。其他环境设置 EDGE_EXECUTABLE 为已安装的 Chromium 浏览器可执行文件路径。
 

@@ -42,6 +42,16 @@ const action = useAction(),
   order = ref(''),
   conversation = ref(''),
   reply = ref('')
+const descriptionLength = computed(() => Array.from(description.value.trim()).length)
+const conversationInvalid = computed(() => {
+  const value = conversation.value.trim()
+  return (
+    value !== '' && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+  )
+})
+const canCreate = computed(
+  () => !!subject.value.trim() && descriptionLength.value >= 5 && !conversationInvalid.value,
+)
 let detailRequest: AbortController | undefined
 watch(source, () => {
   detailRequest?.abort()
@@ -114,6 +124,7 @@ async function claim(ticket: Ticket) {
   })
 }
 async function create() {
+  if (!canCreate.value) return
   await action.run(async () => {
     const data = {
       subject: subject.value.trim(),
@@ -212,26 +223,56 @@ async function close() {
     <p v-if="action.notice.value" class="desk-notice" role="status">{{ action.notice.value }}</p>
     <form v-if="creating" class="desk-detail desk-form" @submit.prevent="create">
       <h2>申请人工协助</h2>
-      <label>问题标题<input v-model="subject" required maxlength="200" /></label
-      ><label
+      <label>问题标题<input v-model="subject" required maxlength="200" /></label>
+      <label
         >问题描述<textarea
           v-model="description"
           required
           minlength="5"
           maxlength="4000"
           rows="4"
-        /></label
-      ><label>关联订单号（可选）<input v-model="order" maxlength="50" /></label
-      ><label
-        >关联会话编号（可选）<input v-model="conversation" pattern="[0-9a-fA-F-]{36}"
-      /></label>
+          aria-describedby="ticket-description-hint"
+          :aria-invalid="descriptionLength > 0 && descriptionLength < 5"
+        />
+        <small
+          id="ticket-description-hint"
+          class="desk-field-hint"
+          :class="{ invalid: descriptionLength > 0 && descriptionLength < 5 }"
+        >
+          至少填写 5 个字符（当前 {{ descriptionLength }} 个）。
+        </small>
+      </label>
+      <label
+        >关联订单号（可选）<input
+          v-model="order"
+          maxlength="50"
+          placeholder="可留空，或填写「我的订单」中的订单号"
+          aria-describedby="ticket-order-hint"
+        />
+        <small id="ticket-order-hint" class="desk-field-hint">请填写当前账号自己的订单号。</small>
+      </label>
+      <label
+        >关联会话编号（可选）<input
+          v-model="conversation"
+          maxlength="36"
+          placeholder="可留空，或粘贴会话 UUID"
+          aria-describedby="ticket-conversation-hint"
+          :aria-invalid="conversationInvalid"
+        />
+        <small
+          id="ticket-conversation-hint"
+          class="desk-field-hint"
+          :class="{ invalid: conversationInvalid }"
+        >
+          {{
+            conversationInvalid
+              ? '会话编号格式不正确，请粘贴完整 UUID 或留空。'
+              : '可在聊天的会话信息中复制编号。'
+          }}
+        </small>
+      </label>
       <p>重复提交相同内容会复用本次请求编号。创建成功后等待工作人员领取。</p>
-      <button
-        class="primary-button"
-        :disabled="action.busy.value || description.trim().length < 5 || !subject.trim()"
-      >
-        提交工单
-      </button>
+      <button class="primary-button" :disabled="action.busy.value || !canCreate">提交工单</button>
     </form>
     <div v-if="loading" class="desk-empty">正在同步工单…</div>
     <div v-else-if="!items.length && !error" class="desk-empty">当前条件下没有工单。</div>
