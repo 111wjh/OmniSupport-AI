@@ -44,8 +44,7 @@ async def generate_agent_reply(
          "conversation_id": conversation_id,
          "ticket_idempotency_key": ticket_idempotency_key or f"agent-run:{workflow_thread_id}",
          "model_calls": 0,
-         "refund_submission_reply": None,
-         "ticket_creation_reply": None,
+         "business_reply": None,
         }
 
         graph_config = {

@@ -18,11 +18,9 @@ class AgentState(TypedDict):
     model_calls: int
     # 是否启用流式输出；未提供时默认为 False
     stream_enabled: NotRequired[bool]
-    # 本轮退款提交工具执行后，根据真实结果生成的回复。
-    refund_submission_reply: NotRequired[str | None]
     # 当前聊天会话，由后端传入，供工单关联使用。
     conversation_id: NotRequired[UUID | None]
-    # 根据本轮工单创建工具的实际结果生成的回复。
-    ticket_creation_reply: NotRequired[str | None]
+    # 根据本轮业务工具的实际结果生成的固定回复。
+    business_reply: NotRequired[str | None]
     # 服务端生成，绝不从模型参数读取。
     ticket_idempotency_key: NotRequired[str | None]

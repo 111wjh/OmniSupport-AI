@@ -18,7 +18,10 @@ from app.agent.refund_reply import build_refund_submission_reply
 from app.agent.ticket_reply import build_ticket_creation_reply
 logger = logging.getLogger(__name__)
 
-
+BUSINESS_REPLY_BUILDERS = {
+    "submit_refund_request": build_refund_submission_reply,
+    "create_support_ticket": build_ticket_creation_reply,
+}
 async def call_model(
     state: AgentState,
 ) -> dict[str, Any]:
@@ -200,8 +203,7 @@ async def execute_tools(
 
     # 3. 逐个执行模型请求的工具
     tool_messages = []
-    refund_submission_reply = None
-    ticket_creation_reply = None
+    business_reply = None
 
     for tool_call in tool_calls:
         function = tool_call["function"]
@@ -277,17 +279,11 @@ async def execute_tools(
                 tool_result.get("error", "unknown_error"),
                 duration_ms,
             )
-        # 当前批次只有一个工具调用时，生成对应业务的固定回执。
+        # 单次业务工具调用使用根据实际结果生成的固定回执。
         if len(tool_calls) == 1:
-            if tool_name == "submit_refund_request":
-                refund_submission_reply = (
-                    build_refund_submission_reply(tool_result)
-                )
-
-            elif tool_name == "create_support_ticket":
-                ticket_creation_reply = (
-                    build_ticket_creation_reply(tool_result)
-                )
+            builder = BUSINESS_REPLY_BUILDERS.get(tool_name)
+            if builder is not None:
+                business_reply = builder(tool_result)
         # 4. 将执行结果转换为模型可以读取的工具消息
         tool_messages.append({
             "role": "tool",
@@ -301,8 +297,7 @@ async def execute_tools(
     # 5. 将工具结果追加到 LangGraph 状态
     return {
         "messages": tool_messages,
-        "refund_submission_reply": refund_submission_reply,
-        "ticket_creation_reply": ticket_creation_reply,
+        "business_reply": business_reply,
     }
 
 
@@ -345,85 +340,29 @@ def handle_call_limit(
 
 
 def route_after_tools(state: AgentState) -> str:
-    """有业务回执时进入对应回复节点，否则继续调用模型。"""
-
-    refund_reply = state.get("refund_submission_reply")
-
-    if isinstance(refund_reply, str) and refund_reply.strip():
-        return "refund_submission_result"
-
-    ticket_reply = state.get("ticket_creation_reply")
-
-    if isinstance(ticket_reply, str) and ticket_reply.strip():
-        return "ticket_creation_result"
-
+    """有固定业务回执时直接输出，否则回到模型。"""
+    reply = state.get("business_reply")
+    if isinstance(reply, str) and reply.strip():
+        return "business_receipt"
     return "model"
 
 
-
-def handle_refund_submission_result(
-    state: AgentState,
-) -> dict[str, Any]:
-    """输出根据真实工具结果生成的退款提交回复。"""
-
-    reply = state.get("refund_submission_reply")
-
+def handle_business_receipt(state: AgentState) -> dict[str, Any]:
+    """输出已经根据实际工具结果生成的回执。"""
+    reply = state.get("business_reply")
     if not isinstance(reply, str) or not reply.strip():
-        raise ValueError("退款提交回复节点缺少回复内容")
+        raise ValueError("业务回执节点缺少回复内容")
 
     logger.info(
-        "LangGraph 退款提交结果回复节点：request_id=%s",
+        "LangGraph 业务回执节点：request_id=%s",
         get_request_id(),
     )
 
-    # 流式模式下，将相同的回复发送给客户端。
     if state.get("stream_enabled", False):
         writer = get_stream_writer()
-        writer({
-            "type": "token",
-            "content": reply,
-        })
+        writer({"type": "token", "content": reply})
 
     return {
-        "messages": [
-            {
-                "role": "assistant",
-                "content": reply,
-            }
-        ],
-        "refund_submission_reply": None,
-    }
-
-
-def handle_ticket_creation_result(
-    state: AgentState,
-) -> dict[str, Any]:
-    """输出根据真实工具结果生成的工单创建回复。"""
-
-    reply = state.get("ticket_creation_reply")
-
-    if not isinstance(reply, str) or not reply.strip():
-        raise ValueError("工单创建结果回复节点缺少回复内容")
-
-    logger.info(
-        "LangGraph 工单创建结果回复节点：request_id=%s",
-        get_request_id(),
-    )
-
-    # 流式模式下，将同一份回执发送给客户端。
-    if state.get("stream_enabled", False):
-        writer = get_stream_writer()
-        writer({
-            "type": "token",
-            "content": reply,
-        })
-
-    return {
-        "messages": [
-            {
-                "role": "assistant",
-                "content": reply,
-            }
-        ],
-        "ticket_creation_reply": None,
+        "messages": [{"role": "assistant", "content": reply}],
+        "business_reply": None,
     }
