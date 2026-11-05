@@ -1,15 +1,13 @@
 """Agent 的退款工具。"""
 
 import logging
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.db.session import AsyncSessionLocal
-from app.services.refund_service import list_customer_refund_requests
-from app.tools.context import ToolContext
-from uuid import UUID
-
 from app.schemas.refund import RefundCreateRequest, RefundExecutionResponse
+from app.services.refund_execution_service import get_customer_refund_execution
 from app.services.refund_service import (
     RefundAlreadyExistsError,
     RefundNotAllowedError,
@@ -17,6 +15,8 @@ from app.services.refund_service import (
     create_refund_request,
     list_customer_refund_requests,
 )
+from app.tools.context import ToolContext
+
 
 logger = logging.getLogger("uvicorn.error")
 
