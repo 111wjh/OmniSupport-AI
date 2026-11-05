@@ -3,7 +3,10 @@ from uuid import UUID
 from typing import Any
 
 from app.models.customer import Customer
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
+from sqlalchemy.sql.elements import ColumnElement
+
+from app.models.refund_execution import RefundExecution
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -273,24 +276,14 @@ async def list_customer_refund_requests(
 
 
 
-async def list_pending_refund_requests(
+async def _list_staff_refund_requests(
     session: AsyncSession,
-    limit: int = 20,
-    offset: int = 0,
+    condition: ColumnElement[bool],
+    limit: int,
+    offset: int,
 ) -> tuple[list[dict[str, Any]], int]:
-    """分页查询员工待审核的退款申请。"""
-
-    # 1. 统计待审核申请总数
-    count_stmt = (
-        select(func.count(RefundRequest.id))
-        .where(RefundRequest.status == "pending")
-    )
-
-    count_result = await session.execute(count_stmt)
-    total = count_result.scalar_one()
-
-    # 2. 查询申请、订单和客户信息
-    stmt = (
+    """按指定条件查询员工退款列表。"""
+    base_stmt = (
         select(
             RefundRequest.id.label("id"),
             RefundRequest.order_id.label("order_id"),
@@ -299,40 +292,70 @@ async def list_pending_refund_requests(
             Order.total_amount.label("order_total_amount"),
             RefundRequest.customer_id.label("customer_id"),
             Customer.email.label("customer_email"),
-            Customer.display_name.label(
-                "customer_display_name"
-            ),
+            Customer.display_name.label("customer_display_name"),
             RefundRequest.reason.label("reason"),
             RefundRequest.status.label("status"),
-            RefundRequest.requested_at.label(
-                "requested_at"
-            ),
+            RefundRequest.requested_at.label("requested_at"),
         )
-        .join(
-            Order,
-            RefundRequest.order_id == Order.id,
-        )
-        .join(
-            Customer,
-            RefundRequest.customer_id == Customer.id,
-        )
-        .where(RefundRequest.status == "pending")
-        # 优先处理提交时间较早的申请
-        .order_by(
+        .select_from(RefundRequest)
+        .join(Order, RefundRequest.order_id == Order.id)
+        .join(Customer, RefundRequest.customer_id == Customer.id)
+        .where(condition)
+    )
+
+    count_stmt = base_stmt.with_only_columns(func.count(RefundRequest.id))
+    count_result = await session.execute(count_stmt)
+    total = count_result.scalar_one()
+
+    page_stmt = (
+        base_stmt.order_by(
             RefundRequest.requested_at.asc(),
             RefundRequest.id.asc(),
         )
         .limit(limit)
         .offset(offset)
     )
-
-    result = await session.execute(stmt)
-
-    # 3. 将查询结果转换为字典列表
-    items = [
-        dict(row)
-        for row in result.mappings().all()
-    ]
+    result = await session.execute(page_stmt)
+    items = [dict(row) for row in result.mappings().all()]
 
     return items, total
 
+
+async def list_pending_refund_requests(
+    session: AsyncSession,
+    limit: int = 20,
+    offset: int = 0,
+) -> tuple[list[dict[str, Any]], int]:
+    """分页查询员工待审核的退款申请。"""
+    return await _list_staff_refund_requests(
+        session=session,
+        condition=RefundRequest.status == "pending",
+        limit=limit,
+        offset=offset,
+    )
+
+
+async def list_ready_to_execute_refund_requests(
+    session: AsyncSession,
+    limit: int = 20,
+    offset: int = 0,
+) -> tuple[list[dict[str, Any]], int]:
+    """分页查询已通过审核且可以发起执行的退款申请。"""
+    has_execution = (
+        select(RefundExecution.id)
+        .where(RefundExecution.refund_request_id == RefundRequest.id)
+        .exists()
+    )
+
+    condition = and_(
+        RefundRequest.status == "approved",
+        Order.status.in_(REFUND_ELIGIBLE_ORDER_STATUSES),
+        Order.total_amount > 0,
+        ~has_execution,
+    )
+    return await _list_staff_refund_requests(
+        session=session,
+        condition=condition,
+        limit=limit,
+        offset=offset,
+    )

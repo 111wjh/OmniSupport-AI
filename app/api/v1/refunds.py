@@ -27,6 +27,7 @@ from app.services.refund_service import (
     review_refund_request,
     list_customer_refund_requests,
     list_pending_refund_requests,
+    list_ready_to_execute_refund_requests,
     create_refund_request,
 )
 from app.services.refund_execution_service import (
@@ -283,4 +284,31 @@ async def get_refund_execution(
 
     return RefundExecutionResponse.model_validate(
         execution
+    )
+
+@router.get(
+    "/ready-to-execute",
+    response_model=StaffRefundListResponse,
+)
+async def list_ready_to_execute_refunds(
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_staff: Annotated[
+        Staff,
+        Depends(require_staff_roles(StaffRole.REFUND_REVIEWER)),
+    ],
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> StaffRefundListResponse:
+    """分页查询员工待执行的模拟退款申请。"""
+    items, total = await list_ready_to_execute_refund_requests(
+        session=session,
+        limit=limit,
+        offset=offset,
+    )
+
+    return StaffRefundListResponse(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
     )
