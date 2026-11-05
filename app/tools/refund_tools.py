@@ -9,8 +9,14 @@ from app.services.refund_service import list_customer_refund_requests
 from app.tools.context import ToolContext
 from uuid import UUID
 
-from app.schemas.refund import RefundExecutionResponse
-from app.services.refund_execution_service import get_customer_refund_execution
+from app.schemas.refund import RefundCreateRequest, RefundExecutionResponse
+from app.services.refund_service import (
+    RefundAlreadyExistsError,
+    RefundNotAllowedError,
+    RefundOrderNotFoundError,
+    create_refund_request,
+    list_customer_refund_requests,
+)
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -146,4 +152,72 @@ async def execute_get_refund_execution(
             "success": False,
             "error": "refund_execution_query_failed",
             "message": "退款执行结果暂时无法查询，请稍后重试。",
+        }
+
+
+async def execute_submit_refund_request(
+    arguments: str,
+    context: ToolContext,
+) -> dict:
+    """为当前客户提交待审核的退款申请。"""
+    try:
+        data = RefundCreateRequest.model_validate_json(arguments)
+    except ValidationError:
+        return {
+            "success": False,
+            "error": "invalid_arguments",
+            "message": "退款申请参数不合法，请检查订单编号和退款原因。",
+        }
+
+    customer_id = context.customer_id
+    if customer_id is None:
+        return {
+            "success": False,
+            "error": "authentication_required",
+            "message": "请先登录，再提交退款申请。",
+        }
+
+    try:
+        async with AsyncSessionLocal() as session:
+            refund_request = await create_refund_request(
+                session=session,
+                customer_id=customer_id,
+                data=data,
+            )
+
+            return {
+                "success": True,
+                "data": {
+                    "id": str(refund_request.id),
+                    "order_id": str(refund_request.order_id),
+                    "status": refund_request.status,
+                    "reason": refund_request.reason,
+                    "requested_at": refund_request.requested_at.isoformat(),
+                },
+                "message": "退款申请已提交，等待工作人员审核。",
+            }
+    except RefundOrderNotFoundError:
+        return {
+            "success": False,
+            "error": "order_not_found",
+            "message": "未找到该订单，或当前账号无权申请退款。",
+        }
+    except RefundNotAllowedError as exc:
+        return {
+            "success": False,
+            "error": "refund_not_allowed",
+            "message": str(exc),
+        }
+    except RefundAlreadyExistsError as exc:
+        return {
+            "success": False,
+            "error": "refund_already_exists",
+            "message": str(exc),
+        }
+    except Exception:
+        logger.exception("Refund submission tool failed")
+        return {
+            "success": False,
+            "error": "refund_submission_failed",
+            "message": "退款申请提交失败，请稍后重试。",
         }

@@ -40,23 +40,6 @@ class ListProductsArguments(BaseModel):
 
 
 
-class SubmitRefundRequestArguments(BaseModel):
-    """提交退款申请的参数。"""
-
-    model_config = ConfigDict(
-        extra="forbid",
-        str_strip_whitespace=True,
-    )
-
-    order_number: str = Field(
-        min_length=1,
-        max_length=50,
-    )
-
-    reason: str = Field(
-        min_length=5,
-        max_length=2000,
-    )
 
 
 async def execute_tool(
@@ -86,87 +69,6 @@ async def execute_tool(
     if registered is not None:
         context = ToolContext(customer_id=customer_id)
         return await registered.handler(arguments, context)
-
-
-
-    # 为当前客户提交退款申请
-    if tool_name == "submit_refund_request":
-        try:
-            args = SubmitRefundRequestArguments.model_validate_json(
-                arguments
-            )
-        except ValidationError:
-            return {
-                "success": False,
-                "error": "invalid_arguments",
-                "message": "退款申请参数不合法，请检查订单编号和退款原因。",
-            }
-
-        if customer_id is None:
-            return {
-                "success": False,
-                "error": "authentication_required",
-                "message": "请先登录，再提交退款申请。",
-            }
-
-        data = RefundCreateRequest(
-            order_number=args.order_number,
-            reason=args.reason,
-        )
-
-        try:
-            async with AsyncSessionLocal() as session:
-                refund_request = await create_refund_request(
-                    session=session,
-                    customer_id=customer_id,
-                    data=data,
-                )
-
-                return {
-                    "success": True,
-                    "data": {
-                        "id": str(refund_request.id),
-                        "order_id": str(refund_request.order_id),
-                        "status": refund_request.status,
-                        "reason": refund_request.reason,
-                        "requested_at": (
-                            refund_request.requested_at.isoformat()
-                        ),
-                    },
-                    "message": (
-                        "退款申请已提交，等待工作人员审核。"
-                    ),
-                }
-
-        except RefundOrderNotFoundError:
-            return {
-                "success": False,
-                "error": "order_not_found",
-                "message": "未找到该订单，或当前账号无权申请退款。",
-            }
-
-        except RefundNotAllowedError as exc:
-            return {
-                "success": False,
-                "error": "refund_not_allowed",
-                "message": str(exc),
-            }
-
-        except RefundAlreadyExistsError as exc:
-            return {
-                "success": False,
-                "error": "refund_already_exists",
-                "message": str(exc),
-            }
-
-        except Exception:
-            logger.exception("Refund submission tool failed")
-            return {
-                "success": False,
-                "error": "refund_submission_failed",
-                "message": "退款申请提交失败，请稍后重试。",
-            }
-
 
     # MCP 工具统一分发
     mcp_argument_models = {

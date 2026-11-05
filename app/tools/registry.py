@@ -16,8 +16,9 @@ from app.tools.refund_tools import (
     ListMyRefundsArguments,
     execute_get_refund_execution,
     execute_list_my_refunds,
+    execute_submit_refund_request,
 )
-
+from app.schemas.refund import RefundCreateRequest
 @dataclass(frozen=True)
 class ToolSpec:
     description: str
@@ -64,6 +65,18 @@ REGISTERED_TOOLS: dict[str, ToolSpec] = {
         ),
         arguments_model=GetRefundExecutionArguments,
         handler=execute_get_refund_execution,
+    ),
+    "submit_refund_request": ToolSpec(
+        description=(
+            "为当前已认证客户提交退款申请。"
+            "仅当客户明确要求申请退款时使用，"
+            "不能仅因客户询问退款政策或退款资格就自动提交。"
+            "必须提供真实订单编号和退款原因。"
+            "后端负责验证客户身份、订单归属和退款资格。"
+            "本工具只创建待审核申请，不批准退款，也不执行退款。"
+        ),
+        arguments_model=RefundCreateRequest,
+        handler=execute_submit_refund_request,
     ),
 }
 
