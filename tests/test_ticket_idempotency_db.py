@@ -23,6 +23,7 @@ from app.schemas.ticket import TicketCreateRequest
 from app.services import chat_idempotency, chat_service, conversation_service, multimodal_service, ticket_service
 from app.services.ticket_service import TicketIdempotencyConflictError
 from app.tools import ticket_tools
+from app.tools.context import ToolContext
 from app.agent import graph, nodes, service as agent_service
 from evaluations.ticket_test_db import run_async, ticket_test_database
 
@@ -311,11 +312,17 @@ def test_same_operation_repeated_tool_arguments_cannot_create_second_ticket(monk
     async def check():
         async with environment(monkeypatch) as env:
             operation = await chat_idempotency.prepare_chat_operation(env.customers[0].id, uuid4(), "建单", None)
-            kwargs = dict(customer_id=env.customers[0].id, conversation_id=operation.conversation_id,
-                          idempotency_key=chat_idempotency.ticket_key(operation.id))
-            first = await ticket_tools.execute_create_support_ticket(json.dumps(ARGS), **kwargs)
-            repeated = await ticket_tools.execute_create_support_ticket(json.dumps(ARGS), **kwargs)
-            changed = await ticket_tools.execute_create_support_ticket(json.dumps({**ARGS, "subject": "改写标题"}), **kwargs)
+            context = ToolContext(
+                customer_id=env.customers[0].id,
+                conversation_id=operation.conversation_id,
+                ticket_idempotency_key=chat_idempotency.ticket_key(operation.id),
+            )
+            first = await ticket_tools.execute_create_support_ticket(json.dumps(ARGS), context)
+            repeated = await ticket_tools.execute_create_support_ticket(json.dumps(ARGS), context)
+            changed = await ticket_tools.execute_create_support_ticket(
+                json.dumps({**ARGS, "subject": "改写标题"}),
+                context,
+            )
             assert first["success"] is repeated["success"] is True
             assert first["data"]["id"] == repeated["data"]["id"]
             assert changed["error"] == "ticket_idempotency_conflict"

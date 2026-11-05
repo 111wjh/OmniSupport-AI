@@ -1,7 +1,5 @@
 import logging
 from typing import Any
-from uuid import UUID
-
 from pydantic import ValidationError
 
 from app.db.session import AsyncSessionLocal
@@ -13,18 +11,19 @@ from app.services.ticket_service import (
     TicketIdempotencyConflictError,
     create_customer_ticket,
 )
-
+from app.tools.context import ToolContext
 
 logger = logging.getLogger(__name__)
 
 
 async def execute_create_support_ticket(
     arguments: str,
-    customer_id: UUID | None,
-    conversation_id: UUID | None,
-    idempotency_key: str | None = None,
+    context: ToolContext,
 ) -> dict[str, Any]:
     """校验工具参数，并为当前客户创建关联当前会话的工单。"""
+    customer_id = context.customer_id
+    conversation_id = context.conversation_id
+    idempotency_key = context.ticket_idempotency_key
 
     # 1. 客户身份和会话必须由后端提供。
     if customer_id is None:

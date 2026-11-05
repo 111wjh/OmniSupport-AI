@@ -7,3 +7,5 @@ class ToolContext:
     """由后端传给工具的请求信息。"""
 
     customer_id: UUID | None = None
+    conversation_id: UUID | None = None
+    ticket_idempotency_key: str | None = None

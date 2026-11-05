@@ -1,26 +1,14 @@
-
-import json
+import logging
 from uuid import UUID
 
-from app.db.session import AsyncSessionLocal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
-import logging
-from app.tools.registry import REGISTERED_TOOLS
+
 from app.mcp_client.client import call_mcp_tool
-from app.schemas.refund import (
-    RefundCreateRequest,
-)
-
-from app.services.refund_service import (
-    create_refund_request,
-    RefundOrderNotFoundError,
-    RefundNotAllowedError,
-    RefundAlreadyExistsError,
-)
-from app.tools.ticket_tools import execute_create_support_ticket
 from app.tools.context import ToolContext
-logger = logging.getLogger("uvicorn.error")
+from app.tools.registry import REGISTERED_TOOLS
 
+
+logger = logging.getLogger("uvicorn.error")
 
 
 class ProductInfoArguments(BaseModel):
@@ -33,13 +21,11 @@ class ProductInfoArguments(BaseModel):
         max_length=100,
     )
 
+
 class ListProductsArguments(BaseModel):
     """MCP 商品列表查询工具的参数。"""
 
     model_config = ConfigDict(extra="forbid")
-
-
-
 
 
 async def execute_tool(
@@ -51,23 +37,16 @@ async def execute_tool(
 ) -> dict:
     """统一执行 Agent 工具。"""
 
-    logger.info(
-    "Agent tool requested: %s",
-    tool_name,
-    )
-    # 为当前客户创建人工服务工单。
-    if tool_name == "create_support_ticket":
-        return await execute_create_support_ticket(
-            arguments=arguments,
-            customer_id=customer_id,
-            conversation_id=conversation_id,
-            idempotency_key=ticket_idempotency_key,
-        )
+    logger.info("Agent tool requested: %s", tool_name)
 
     # 按名称分发已注册的本地工具。
     registered = REGISTERED_TOOLS.get(tool_name)
     if registered is not None:
-        context = ToolContext(customer_id=customer_id)
+        context = ToolContext(
+            customer_id=customer_id,
+            conversation_id=conversation_id,
+            ticket_idempotency_key=ticket_idempotency_key,
+        )
         return await registered.handler(arguments, context)
 
     # MCP 工具统一分发
