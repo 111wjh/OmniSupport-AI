@@ -7,7 +7,7 @@ import time
 from mcp import Client, StdioServerParameters
 
 from app.mcp_client.schema import convert_mcp_tool_to_qwen
-from app.tools.definitions import AGENT_TOOLS
+from app.tools.registry import registered_tool_definitions
 
 
 logger = logging.getLogger(__name__)
@@ -112,8 +112,8 @@ async def get_cached_mcp_tools() -> list[dict]:
 async def build_agent_tools() -> list[dict]:
     """合并本地工具与经过白名单过滤的 MCP 工具。"""
 
-        # 使用统一维护的本地工具列表，返回独立副本。
-    local_tools = copy.deepcopy(AGENT_TOOLS)
+    # 1. 从统一注册表生成本地工具定义。
+    local_tools = registered_tool_definitions()
 
     # 2. 获取缓存的 MCP 工具
     mcp_tools = await get_cached_mcp_tools()
